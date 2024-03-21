@@ -1,0 +1,37 @@
+# vim open files
+*.swp
+
+# python __pycache__ folder
+__pycache__
+
+# don't commit our secrets
+secrets.json
+
+# don't commit our env variables
+env.json
+venv
+config.json
+# dotenv
+.env
+
+# virtualenv
+.venv
+venv/
+ENV/
+
+# don't commit our images
+images_critical/*
+!images_critical/.gitkeep
+images_critical_helper/*
+!images_critical_helper/.gitkeep
+
+images_fail/*
+!images_fail/.gitkeep
+images_fail_helper/*
+!images_fail_helper/.gitkeep
+
+.idea
+.idea/*
+
+database.ini
+*.db
