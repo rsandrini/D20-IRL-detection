@@ -82,8 +82,7 @@ def roll_dice(uuid, folder):
 
     # Save the GIF in memory
     print(f"Saving GIF in memory")
-    # gif_bytes = BytesIO()
-    # imageio.mimwrite(gif_bytes, processed_frames, format='gif', fps=20, palettesize=5)
+    processed_images = [Image.fromarray(frame) for frame in processed_frames]
     processed_frames[0].save(
         f'{folder}/{uuid}.gif',
         save_all=True,
