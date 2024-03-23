@@ -22,9 +22,10 @@ def home():
     return render_template('index.html')
 
 
-@app.route('/roll', methods=['POST'])
+@app.route('/roll', methods=['GET', 'POST'])
 def page_roll_dice():
-    # Call the /roll method as an API
+    if request.method == 'GET':
+        return render_template('roll.html')
 
     #lets count the elapsed time for the roll
     start_time = time.time()
