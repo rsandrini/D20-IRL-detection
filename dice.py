@@ -37,25 +37,29 @@ def save_frames(frames, folder):
     # Save frames as JPG files
     for i, frame in enumerate(frames):
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        image.save(os.path.join(folder, f"frame_{i}.jpg"))
-        image_list.append(f"frame_{i}.jpg")
+        # store the image in memory
+        mem = BytesIO()
+        image.save(mem, format="JPEG")
+        image_list.append(mem)
     return image_list
 
 
-def generate_gif_from_images(load_folder, save_folder, image_list, uuid):
-
-    images = []
-    for image_file in image_list:
-        image_path = os.path.join(load_folder, image_file)
-        image = Image.open(image_path)
-        images.append(image)
+def generate_gif_from_images(save_folder, image_list, uuid):
+    #
+    # images = []
+    # for image_file in image_list:
+    #     # Load the image from memory
+    #     image = Image.open(BytesIO(image_file))
+    #     image_path = os.path.join(load_folder, image_file)
+    #     image = Image.open(image_path)
+    #     images.append(image)
 
     # Save the GIF
     output_gif_path = os.path.join(save_folder, f'{uuid}.gif')
-    images[0].save(
+    image_list[0].save(
         output_gif_path,
         save_all=True,
-        append_images=images[1:],
+        append_images=image_list[1:],
         duration=10,  # in milliseconds
         loop=0
     )
@@ -104,10 +108,10 @@ def roll_dice(uuid, folder):
                 start = time.time()
                 # Save frames as JPG files
                 temp_folder = f'{folder}/temp'
-                image_list= save_frames(frames, temp_folder)
+                image_list = save_frames(frames, temp_folder)
 
                 # Create GIF from images
-                generate_gif_from_images(temp_folder, folder, image_list, uuid)
+                generate_gif_from_images(folder, image_list, uuid)
                 print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
 
                 # clean up temp folder
