@@ -37,7 +37,7 @@ def page_roll_dice():
         roll_data = roll_response.json()
 
         start_time_detection = time.time()
-        detection_text = roll_data['detections']
+        detection_text = roll_data['detections'][0]
         gif_base64 = roll_data['gif_base64']
         time_elapsed_detection = time.time() - start_time_detection
         time_elapsed = time.time() - start_time

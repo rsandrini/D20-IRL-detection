@@ -60,9 +60,9 @@ def roll_dice(uuid, folder):
         else:
             motion_frame_count = 0
 
-        # Stop recording when motion stops for at least 10 frames,
+        # Stop recording when motion stops for at least X frames,
         # and continue recording if frames are still being detected since the last motion
-        if motion_frame_count == 0 and frames_since_last_motion >= 20:
+        if motion_frame_count == 0 and frames_since_last_motion >= 5:
             print(f"Motion stopped with {len(frames)} frames detected.")
             break
 
@@ -76,7 +76,7 @@ def roll_dice(uuid, folder):
         print(f"Last frame saved as {folder}/{uuid}.png")
 
     # Adjust the size and quality of the GIF
-    print(f"Saving GIF {folder}/{uuid}.gif...")
+    print(f"Saving GIF in memory")
     # imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
     # Save the GIF in memory
     gif_bytes = BytesIO()
