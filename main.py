@@ -43,7 +43,7 @@ def page_roll_dice():
 
 
 @app.route('/roll', methods=['POST'])
-def page_roll_dice():
+def api_roll_dice():
     # generate a new UUID for the request
     request_uuid = str(uuid.uuid4())
 
