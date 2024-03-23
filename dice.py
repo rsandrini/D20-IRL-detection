@@ -39,9 +39,17 @@ def save_frames(frames, folder):
         image.save(os.path.join(folder, f"frame_{i}.jpg"))
 
 
+def natural_sort_key(s):
+    """
+    Define a sorting key function for natural sorting of filenames.
+    """
+    import re
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
+
+
 def generate_gif_from_images(load_folder, save_folder, uuid):
     image_files = [file for file in os.listdir(load_folder) if file.endswith('.jpg')]
-    image_files.sort()  # Sort the image files in alphanumeric order
+    image_files.sort(key=natural_sort_key)  # Sort the image files in alphanumeric order
 
     images = []
     for image_file in image_files:
