@@ -83,6 +83,8 @@ def roll_dice(uuid, folder):
         print(f"Last frame saved as {folder}/{uuid}.jpg")
 
     # Save the GIF in memory
+    #calculate elapse time
+    start_time = time.time()
     print(f"Processing GIF")
     processed_images = [Image.fromarray(frame) for frame in processed_frames]
     processed_images[0].save(
@@ -91,7 +93,8 @@ def roll_dice(uuid, folder):
         append_images=processed_images[1:],  # append rest of the images
         duration=10,  # in milliseconds
         loop=0)
-
+    elapsed_time = time.time() - start_time
+    print(f"GIF generated in {elapsed_time} seconds")
     print("Finishing...")
     cap.release()
     print("Camera released")
