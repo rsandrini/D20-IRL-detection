@@ -16,7 +16,6 @@ load_dotenv()
 MODEL_FOLDER = os.getenv("MODEL_FOLDER")
 RESULT_FOLDER = os.getenv("RESULT_FOLDER")
 
-
 app = Flask(__name__)
 detector = ObjectDetector(MODEL_FOLDER)
 
@@ -40,7 +39,9 @@ def page_roll_dice():
         result_gif = roll_data['gif']
         detection_text = ", ".join(roll_data['detections'])
         time_elapsed = time.time() - start_time
-        return render_template('roll.html', result_gif=result_gif, detection_text=detection_text, time_elapsed=time_elapsed)
+
+        file_gif = os.path.join(RESULT_FOLDER, result_gif)
+        return render_template('roll.html', result_gif=file_gif, detection_text=detection_text, time_elapsed=time_elapsed)
     except Exception as e:
         raise
 
@@ -60,9 +61,9 @@ def api_roll_dice():
                     "gif": f"{RESULT_FOLDER}/{request_uuid}.gif"})
 
 
-@app.route(f'/{RESULT_FOLDER}/<path:image_name>', methods=['GET'])
-def get_image(image_name):
-    return send_from_directory(RESULT_FOLDER, image_name)
+# @app.route(f'/{RESULT_FOLDER}/<path:image_name>', methods=['GET'])
+# def get_image(image_name):
+#     return send_from_directory(RESULT_FOLDER, image_name, as_attachment=True)
 
 
 if __name__ == '__main__':
