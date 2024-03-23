@@ -33,18 +33,15 @@ def page_roll_dice():
 
     try:
         # Extract data from the response
-        roll_data = roll_response.json()
-
-        print(roll_data)
-
-        result_gif = roll_data['gif']
+        _, gif_bytes = roll_data = roll_response.json()
+        
         start_time_detection = time.time()
         detection_text = roll_data['detections']
         time_elapsed_detection = time.time() - start_time_detection
         time_elapsed = time.time() - start_time
 
         return render_template('roll.html',
-                               result_gif=result_gif,
+                               result_gif=gif_bytes,
                                detection_text=detection_text,
                                time_elapsed=time_elapsed,
                                time_elapsed_detection=time_elapsed_detection)
