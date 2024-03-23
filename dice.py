@@ -1,4 +1,4 @@
-import concurrent
+import concurrent.futures
 from io import BytesIO
 
 import cv2
