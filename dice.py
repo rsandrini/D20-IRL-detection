@@ -76,17 +76,17 @@ def roll_dice(uuid, folder):
     # Save the last frame as an image
     if len(frames) > 0:
         print(f"Saving image")
-        cv2.imwrite(f'{folder}/{uuid}.png', cv2.cvtColor(processed_frames[-1], cv2.COLOR_RGB2BGR))
-        print(f"Last frame saved as {folder}/{uuid}.png")
+        cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(processed_frames[-1], cv2.COLOR_RGB2BGR))
+        print(f"Last frame saved as {folder}/{uuid}.jpg")
 
     # Save the GIF in memory
-    print(f"Saving GIF in memory")
+    print(f"Processing GIF")
     processed_images = [Image.fromarray(frame) for frame in processed_frames]
     processed_images[0].save(
         f'{folder}/{uuid}.gif',
         save_all=True,
         append_images=processed_images[1:],  # append rest of the images
-        duration=100,  # in milliseconds
+        duration=10,  # in milliseconds
         loop=0)
 
     print("Finishing...")
