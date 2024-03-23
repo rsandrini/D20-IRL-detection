@@ -31,7 +31,10 @@ def hardware_activation():
 def process_frame(frame):
     # Process a single frame (e.g., resize and convert color space)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = cv2.resize(frame, (320, 240))
+    # frame = cv2.resize(frame, (320, 240))
+    # reduce quality
+    frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
+
     return frame
 
 

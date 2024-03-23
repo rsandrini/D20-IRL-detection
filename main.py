@@ -49,11 +49,11 @@ def api_roll_dice():
     roll_dice(request_uuid, RESULT_FOLDER)
 
     start_time_detection = time.time()
-    detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.png")
+    detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.jpg")
     time_elapsed_detection = time.time() - start_time_detection
     time_elapsed = time.time() - start_time
     return jsonify({"detections":  detection,
-                    "image": f"{RESULT_FOLDER}/{request_uuid}.png",
+                    "image": f"{RESULT_FOLDER}/{request_uuid}.jpg",
                     "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
                     "time_elapsed": time_elapsed,
                     "time_elapsed_detection": time_elapsed_detection
