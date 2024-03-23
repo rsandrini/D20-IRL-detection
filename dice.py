@@ -28,15 +28,6 @@ def hardware_activation():
         GPIO.cleanup()  # Clean up GPIO settings
 
 
-def process_frame(frame):
-    # Process a single frame (e.g., resize and convert color space)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    # frame = cv2.resize(frame, (320, 240))
-    # reduce quality
-    frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
-    return frame
-
-
 def save_frames(frames, folder):
     # Create folder if it doesn't exist
     if not os.path.exists(folder):
@@ -82,6 +73,8 @@ def roll_dice(uuid, folder):
             last_mean = np.mean(gray)
 
             if frames_recorded % frame_skip == 0:
+                frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frames.append(frame)
 
             frames_recorded += 1
@@ -98,22 +91,27 @@ def roll_dice(uuid, folder):
             if motion_frame_count == 0 and frames_since_last_motion >= 10:
                 print(f"Motion stopped with {len(frames)} frames detected.")
 
-                # Process frames concurrently
-                processed_frames = list(executor.map(process_frame, frames))
+                cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(frames[-1], cv2.COLOR_RGB2BGR))
 
-                cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(processed_frames[-1], cv2.COLOR_RGB2BGR))
-
+                start = time.time()
                 # Save frames as JPG files
-                save_frames(processed_frames, f'{folder}/temp')
+                temp_folder = f'{folder}/temp'
+                save_frames(frames, temp_folder)
 
                 # Create GIF from images
-                create_gif(processed_frames, folder, uuid)
+                create_gif(frames, folder, uuid)
+                print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
 
+                # clean up temp folder
+                for file in os.listdir(temp_folder):
+                    os.remove(os.path.join(temp_folder, file))
+                    
                 break
 
     print("Finishing...")
     cap.release()
     print("Camera released")
+
 
 
 if __name__ == "__main__":
