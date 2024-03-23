@@ -15,7 +15,7 @@ RESULT_FOLDER = os.path.join("static", os.getenv("RESULT_FOLDER"))
 
 app = Flask(__name__)
 detector = ObjectDetector(MODEL_FOLDER)
-
+cap = cv2.VideoCapture(0)
 
 @app.route('/', methods=['GET'])
 def home():
@@ -53,7 +53,7 @@ def api_roll_dice():
 
     # Call the roll dice method
     # Get the image, predict and return
-    roll_dice(request_uuid, RESULT_FOLDER)
+    roll_dice(cap, request_uuid, RESULT_FOLDER)
     detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.png")
 
     return jsonify({"detections":  detection,

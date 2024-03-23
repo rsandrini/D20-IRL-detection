@@ -25,8 +25,8 @@ def hardware_activation():
         GPIO.cleanup()  # Clean up GPIO settings
 
 
-def roll_dice(uuid, folder):
-    cap = cv2.VideoCapture(0)
+def roll_dice(cap, uuid, folder):
+
     last_mean = 0
     frames_recorded = 0  # Count of frames recorded for GIF
     frame_skip = 1  # Number of frames to skip between recordings
