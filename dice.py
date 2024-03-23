@@ -1,5 +1,6 @@
 from io import BytesIO
-
+from io import BytesIO
+import concurrent.futures
 import cv2
 import numpy as np
 import imageio
@@ -27,6 +28,12 @@ def hardware_activation():
         GPIO.cleanup()  # Clean up GPIO settings
 
 
+def process_frame(frame):
+    # Process a single frame (e.g., resize and convert color space)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = cv2.resize(frame, (320, 240))
+    return frame
+
 def roll_dice(uuid, folder):
     cap = cv2.VideoCapture(0)
     last_mean = 0
@@ -38,51 +45,49 @@ def roll_dice(uuid, folder):
     frames = []
     hardware_activation()
 
-    while True:
-        ret, frame = cap.read()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        result = np.abs(np.mean(gray) - last_mean)
-        last_mean = np.mean(gray)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        while True:
+            ret, frame = cap.read()
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            result = np.abs(np.mean(gray) - last_mean)
+            last_mean = np.mean(gray)
 
-        if frames_recorded % frame_skip == 0:
-            # Reduce resolution
-            last_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if frames_recorded % frame_skip == 0:
+                frames.append(frame)  # Add original frame to the list
 
-            frame = cv2.resize(last_frame, (320, 240))  # Adjust resolution as needed
-            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            frames_recorded += 1
+            frames_since_last_motion += 1
 
-        frames_recorded += 1
-        frames_since_last_motion += 1
+            if result > 0.1:
+                motion_frame_count += 1
+                frames_since_last_motion = 0  # Reset the counter for frames since the last motion detection
+            else:
+                motion_frame_count = 0
 
-        if result > 0.1:
-            motion_frame_count += 1
-            frames_since_last_motion = 0  # Reset the counter for frames since the last motion detection
-        else:
-            motion_frame_count = 0
+            # Stop recording when motion stops for at least X frames,
+            # and continue recording if frames are still being detected since the last motion
+            if motion_frame_count == 0 and frames_since_last_motion >= 5:
+                print(f"Motion stopped with {len(frames)} frames detected.")
+                break
 
-        # Stop recording when motion stops for at least X frames,
-        # and continue recording if frames are still being detected since the last motion
-        if motion_frame_count == 0 and frames_since_last_motion >= 5:
-            print(f"Motion stopped with {len(frames)} frames detected.")
-            break
+        # Process frames concurrently
+        processed_frames = list(executor.map(process_frame, frames))
 
-    # Convert frames to GIF using imageio
-    duration_per_frame = 0.03  # total_duration / len(frames)  # Decreased duration per frame
+    # Convert processed frames to GIF using imageio
+    duration_per_frame = 0.03  # total_duration / len(processed_frames)  # Decreased duration per frame
 
     # Save the last frame as an image
-    if len(frames) > 0:
+    if len(processed_frames) > 0:
         print(f"Saving image")
-        cv2.imwrite(f'{folder}/{uuid}.png', cv2.cvtColor(last_frame, cv2.COLOR_RGB2BGR))
+        cv2.imwrite(f'{folder}/{uuid}.png', cv2.cvtColor(processed_frames[-1], cv2.COLOR_RGB2BGR))
         print(f"Last frame saved as {folder}/{uuid}.png")
 
-    # Adjust the size and quality of the GIF
-    print(f"Saving GIF in memory")
-    # imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
     # Save the GIF in memory
+    print(f"Saving GIF in memory")
     gif_bytes = BytesIO()
-    imageio.mimwrite(gif_bytes, frames, format='gif', duration=duration_per_frame, fps=15, palettesize=5)
+    imageio.mimwrite(gif_bytes, processed_frames, format='gif', duration=duration_per_frame, fps=15, palettesize=5)
 
     print("Finishing...")
     cap.release()
     print("Camera released")
-    return last_frame, gif_bytes
+    return processed_frames[-1], gif_bytes
