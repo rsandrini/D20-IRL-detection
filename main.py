@@ -32,7 +32,7 @@ def page_roll_dice():
 
     #lets count the elapsed time for the roll
     start_time = time.time()
-    roll_response = requests.post('http://localhost:5000/roll')
+    roll_response = requests.post('http://localhost:5000/api/roll')
 
     try:
         # Extract data from the response
@@ -43,10 +43,9 @@ def page_roll_dice():
         return render_template('roll.html', result_gif=result_gif, detection_text=detection_text, time_elapsed=time_elapsed)
     except Exception as e:
         raise
-        # return f"Error: {e}"
-    
 
-@app.route('/roll', methods=['POST'])
+
+@app.route('/api/roll', methods=['POST'])
 def api_roll_dice():
     # generate a new UUID for the request
     request_uuid = str(uuid.uuid4())
