@@ -31,7 +31,7 @@ def page_roll_dice():
         roll_data = roll_response.json()
 
         return render_template('roll.html',
-                               gif_base64=roll_data['gif_base64'],
+                               gif=roll_data['gif'],
                                result_image=roll_data['image'],
                                detection_text=roll_data['detections'],
                                time_elapsed=roll_data['time_elapsed'],
@@ -46,15 +46,15 @@ def api_roll_dice():
     # generate a new UUID for the request
     request_uuid = str(uuid.uuid4())
 
-    gif_bytes = roll_dice(request_uuid, RESULT_FOLDER)
-    gif_base64 = base64.b64encode(gif_bytes.getvalue()).decode('utf-8')
+    roll_dice(request_uuid, RESULT_FOLDER)
+
     start_time_detection = time.time()
     detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.png")
     time_elapsed_detection = time.time() - start_time_detection
     time_elapsed = time.time() - start_time
     return jsonify({"detections":  detection,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.png",
-                    "gif_base64": gif_base64,
+                    "gif_base64": f"{RESULT_FOLDER}/{request_uuid}.gif",
                     "time_elapsed": time_elapsed,
                     "time_elapsed_detection": time_elapsed_detection
                     }

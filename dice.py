@@ -1,6 +1,6 @@
 import concurrent.futures
 from io import BytesIO
-
+from PIL import Image, ImageDraw
 import cv2
 import numpy as np
 import imageio
@@ -74,7 +74,6 @@ def roll_dice(uuid, folder):
                 break
         processed_frames = list(executor.map(process_frame, frames))
 
-
     # Save the last frame as an image
     if len(frames) > 0:
         print(f"Saving image")
@@ -83,11 +82,15 @@ def roll_dice(uuid, folder):
 
     # Save the GIF in memory
     print(f"Saving GIF in memory")
-    gif_bytes = BytesIO()
-    print(processed_frames)
-    imageio.mimwrite(gif_bytes, processed_frames, format='gif', fps=20, palettesize=5)
+    # gif_bytes = BytesIO()
+    # imageio.mimwrite(gif_bytes, processed_frames, format='gif', fps=20, palettesize=5)
+    processed_frames[0].save(
+        f'{folder}/{uuid}.gif',
+        save_all=True,
+        append_images=processed_frames[1:],  # append rest of the images
+        duration=1000,  # in milliseconds
+        loop=0)
 
     print("Finishing...")
     cap.release()
     print("Camera released")
-    return gif_bytes
