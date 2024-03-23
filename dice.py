@@ -91,4 +91,4 @@ def roll_dice(uuid, folder):
     print("Finishing...")
     cap.release()
     print("Camera released")
-    return processed_frames[-1], gif_bytes
+    return gif_bytes
