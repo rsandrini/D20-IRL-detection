@@ -9,11 +9,15 @@
     <h1>Roll Result</h1>
     <div>
         <img src="{{ result_gif }}">
+        <p>
+            <img src="{{ result_image }}">
+        </p>
     </div>
     <div>
         <p>{{ detection_text }}</p>
-        <p>Elapsed time: {{ time_elapsed }}</p>
         <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
+        <p>Elapsed total processing time: {{ time_elapsed }}</p>
+
     </div>
     <form action="/roll" method="POST">
         <input type="submit" value="Roll Again">

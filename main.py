@@ -28,43 +28,40 @@ def page_roll_dice():
         return render_template('roll.html')
 
     #lets count the elapsed time for the roll
-    start_time = time.time()
     roll_response = requests.post('http://localhost:5000/api/roll')
 
     try:
         # Extract data from the response
         roll_data = roll_response.json()
 
-        print(roll_data)
-
-        result_gif = roll_data['gif']
-        start_time_detection = time.time()
-        detection_text = roll_data['detections']
-        time_elapsed_detection = time.time() - start_time_detection
-        time_elapsed = time.time() - start_time
-
         return render_template('roll.html',
-                               result_gif=result_gif,
-                               detection_text=detection_text,
-                               time_elapsed=time_elapsed,
-                               time_elapsed_detection=time_elapsed_detection)
+                               result_gif=roll_data['gif'],
+                               result_image=roll_data['image'],
+                               detection_text=roll_data['detections'],
+                               time_elapsed=roll_data['time_elapsed'],
+                               time_elapsed_detection=roll_data['time_elapsed_detection'])
     except Exception as e:
         raise
 
 
 @app.route('/api/roll', methods=['POST'])
 def api_roll_dice():
+    start_time = time.time()
     # generate a new UUID for the request
     request_uuid = str(uuid.uuid4())
 
-    # Call the roll dice method
-    # Get the image, predict and return
     roll_dice(request_uuid, RESULT_FOLDER)
+    start_time_detection = time.time()
     detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.png")
-
+    time_elapsed_detection = time.time() - start_time_detection
+    time_elapsed = time.time() - start_time
     return jsonify({"detections":  detection,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.png",
-                    "gif": f"{RESULT_FOLDER}/{request_uuid}.gif"})
+                    "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
+                    "time_elapsed": time_elapsed,
+                    "time_elapsed_detection": time_elapsed_detection
+                    }
+    )
 
 
 if __name__ == '__main__':
