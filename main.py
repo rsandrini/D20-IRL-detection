@@ -11,7 +11,7 @@ load_dotenv()
 
 #get the envvar for the folder
 MODEL_FOLDER = os.getenv("MODEL_FOLDER")
-RESULT_FOLDER = os.path.join("statics", os.getenv("RESULT_FOLDER"))
+RESULT_FOLDER = os.path.join("static", os.getenv("RESULT_FOLDER"))
 
 app = Flask(__name__)
 detector = ObjectDetector(MODEL_FOLDER)
