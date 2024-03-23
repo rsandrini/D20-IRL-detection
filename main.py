@@ -1,12 +1,9 @@
 import os
 import uuid
-
 import requests
-from werkzeug.utils import send_from_directory
-
-from dice import *
 from flask import Flask, request, render_template, jsonify
 from object_detection import ObjectDetector
+from dice import *
 
 #load the .env file
 from dotenv import load_dotenv
@@ -14,7 +11,7 @@ load_dotenv()
 
 #get the envvar for the folder
 MODEL_FOLDER = os.getenv("MODEL_FOLDER")
-RESULT_FOLDER = os.getenv("RESULT_FOLDER")
+RESULT_FOLDER = os.path.join("statics", os.getenv("RESULT_FOLDER"))
 
 app = Flask(__name__)
 detector = ObjectDetector(MODEL_FOLDER)
@@ -36,12 +33,14 @@ def page_roll_dice():
     try:
         # Extract data from the response
         roll_data = roll_response.json()
+
+        print(roll_data)
+
         result_gif = roll_data['gif']
         detection_text = ", ".join(roll_data['detections'])
         time_elapsed = time.time() - start_time
 
-        file_gif = os.path.join(RESULT_FOLDER, result_gif)
-        return render_template('roll.html', result_gif=file_gif, detection_text=detection_text, time_elapsed=time_elapsed)
+        return render_template('roll.html', result_gif=result_gif, detection_text=detection_text, time_elapsed=time_elapsed)
     except Exception as e:
         raise
 
@@ -59,11 +58,6 @@ def api_roll_dice():
     return jsonify({"detections":  detection,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.png",
                     "gif": f"{RESULT_FOLDER}/{request_uuid}.gif"})
-
-
-# @app.route(f'/{RESULT_FOLDER}/<path:image_name>', methods=['GET'])
-# def get_image(image_name):
-#     return send_from_directory(RESULT_FOLDER, image_name, as_attachment=True)
 
 
 if __name__ == '__main__':
