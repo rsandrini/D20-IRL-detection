@@ -4,6 +4,7 @@ import imageio
 import RPi.GPIO as GPIO
 import time
 
+
 def hardware_activation():
     # Pin Definitions
     pin = 6  # GPIO 6
@@ -23,7 +24,8 @@ def hardware_activation():
     finally:
         GPIO.cleanup()  # Clean up GPIO settings
 
-def roll_dice():
+
+def roll_dice(uuid, folder):
     cap = cv2.VideoCapture(0)
 
     last_mean = 0
@@ -68,13 +70,12 @@ def roll_dice():
 
     # Save the last frame as an image
     if len(frames) > 0:
-        cv2.imwrite('last_frame.png', cv2.cvtColor(last_frame, cv2.COLOR_RGB2BGR))
-        print("Last frame saved as last_frame.png")
+        cv2.imwrite(f'{folder}/{uuid}.png', cv2.cvtColor(last_frame, cv2.COLOR_RGB2BGR))
+        print(f"Last frame saved as {folder}/{uuid}.png")
 
     # Adjust the size and quality of the GIF
-    print("Saving GIF...")
-    # imageio.mimsave('output.gif', frames, duration=duration_per_frame, fps=10, quality=2)
-    imageio.mimsave('output.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
+    print(f"Saving GIF {folder}/{uuid}.gif...")
+    imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
 
     print("Finishing...")
     cap.release()
