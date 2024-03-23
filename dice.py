@@ -70,9 +70,8 @@ def roll_dice(uuid, folder):
                 print(f"Motion stopped with {len(frames)} frames detected.")
 
                 # Process frames concurrently
-
+                processed_frames = list(executor.map(process_frame, frames))
                 break
-        processed_frames = list(executor.map(process_frame, frames))
 
     # Save the last frame as an image
     if len(frames) > 0:
@@ -87,9 +86,20 @@ def roll_dice(uuid, folder):
         f'{folder}/{uuid}.gif',
         save_all=True,
         append_images=processed_images[1:],  # append rest of the images
-        duration=1000,  # in milliseconds
+        duration=100,  # in milliseconds
         loop=0)
 
     print("Finishing...")
     cap.release()
     print("Camera released")
+
+
+if __name__ == "__main__":
+    # Define folder to save results
+    RESULT_FOLDER = "results"
+
+    # Define a unique identifier for the roll
+    uuid = "unique_id"
+
+    # Roll the dice and save results
+    roll_dice(uuid, RESULT_FOLDER)
