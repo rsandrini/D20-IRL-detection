@@ -39,20 +39,27 @@ def save_frames(frames, folder):
         image.save(os.path.join(folder, f"frame_{i}.jpg"))
 
 
-def create_gif(frames, folder, uuid):
-    # Convert frames to GIF using imageio
-    duration_per_frame = 10  # in milliseconds
+def generate_gif_from_images(load_folder, save_folder, uuid):
+    image_files = [file for file in os.listdir(load_folder) if file.endswith('.jpg')]
+    image_files.sort()  # Sort the image files in alphanumeric order
+
+    images = []
+    for image_file in image_files:
+        image_path = os.path.join(load_folder, image_file)
+        image = Image.open(image_path)
+        images.append(image)
 
     # Save the GIF
-    print(f"Saving GIF")
-    processed_images = [Image.fromarray(frame) for frame in frames]
-    processed_images[0].save(
-        f'{folder}/{uuid}.gif',
+    output_gif_path = os.path.join(save_folder, f'{uuid}.gif')
+    images[0].save(
+        output_gif_path,
         save_all=True,
-        append_images=processed_images[1:],  # append rest of the images
-        duration=duration_per_frame,  # in milliseconds
-        loop=0)
-    print("GIF saved")
+        append_images=images[1:],
+        duration=10,  # in milliseconds
+        loop=0
+    )
+
+    print(f"GIF saved at: {output_gif_path}")
 
 
 def roll_dice(uuid, folder):
@@ -99,13 +106,13 @@ def roll_dice(uuid, folder):
                 save_frames(frames, temp_folder)
 
                 # Create GIF from images
-                create_gif(frames, folder, uuid)
+                generate_gif_from_images(temp_folder, folder, uuid)
                 print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
 
                 # clean up temp folder
                 for file in os.listdir(temp_folder):
                     os.remove(os.path.join(temp_folder, file))
-                    
+
                 break
 
     print("Finishing...")
