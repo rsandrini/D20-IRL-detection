@@ -34,20 +34,20 @@ def save_frames(frames, folder):
         os.makedirs(folder)
 
     # Save frames as JPG files
-    images = []
     for i, frame in enumerate(frames):
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         image.save(os.path.join(folder, f"frame_{i}.jpg"))
+
+
+def generate_gif_from_images(load_folder, save_folder, uuid):
+    image_files = [file for file in os.listdir(load_folder) if file.endswith('.jpg')]
+    image_files.sort()  # Sort the image files in alphanumeric order
+
+    images = []
+    for image_file in image_files:
+        image_path = os.path.join(load_folder, image_file)
+        image = Image.open(image_path)
         images.append(image)
-    return images
-
-def generate_gif_from_images(images, save_folder, uuid):
-    # images.sort()  # Sort the image files in alphanumeric order
-
-    # images = []
-    # for image_file in images_processed:
-    #     image = Image.open(image_file)
-    #     images.append(image)
 
     # Save the GIF
     output_gif_path = os.path.join(save_folder, f'{uuid}.gif')
@@ -103,10 +103,10 @@ def roll_dice(uuid, folder):
                 start = time.time()
                 # Save frames as JPG files
                 temp_folder = f'{folder}/temp'
-                images = save_frames(frames, temp_folder)
+                save_frames(frames, temp_folder)
 
                 # Create GIF from images
-                generate_gif_from_images(images, folder, uuid)
+                generate_gif_from_images(temp_folder, folder, uuid)
                 print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
 
                 # clean up temp folder
