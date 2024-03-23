@@ -39,11 +39,13 @@ def page_roll_dice():
         start_time_detection = time.time()
         detection_text = roll_data['detections'][0]
         gif_base64 = roll_data['gif_base64']
+        image = roll_data['image']
         time_elapsed_detection = time.time() - start_time_detection
         time_elapsed = time.time() - start_time
 
         return render_template('roll.html',
                                result_gif_base64=gif_base64,
+                               result_image=image,
                                detection_text=detection_text,
                                time_elapsed=time_elapsed,
                                time_elapsed_detection=time_elapsed_detection)
