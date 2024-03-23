@@ -34,13 +34,17 @@ def page_roll_dice():
     start_time = time.time()
     roll_response = requests.post('http://localhost:5000/roll')
 
-    # Extract data from the response
-    roll_data = roll_response.json()
-    result_gif = roll_data['gif']
-    detection_text = ", ".join(roll_data['detections'])
-    time_elapsed = time.time() - start_time
-    return render_template('roll.html', result_gif=result_gif, detection_text=detection_text, time_elapsed=time_elapsed)
-
+    try:
+        # Extract data from the response
+        roll_data = roll_response.json()
+        result_gif = roll_data['gif']
+        detection_text = ", ".join(roll_data['detections'])
+        time_elapsed = time.time() - start_time
+        return render_template('roll.html', result_gif=result_gif, detection_text=detection_text, time_elapsed=time_elapsed)
+    except Exception as e:
+        raise
+        # return f"Error: {e}"
+    
 
 @app.route('/roll', methods=['POST'])
 def api_roll_dice():
