@@ -33,26 +33,19 @@ def save_frames(frames, folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+    image_list = []
     # Save frames as JPG files
     for i, frame in enumerate(frames):
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         image.save(os.path.join(folder, f"frame_{i}.jpg"))
+        image_list.append(f"frame_{i}.jpg")
+    return image_list
 
 
-def natural_sort_key(s):
-    """
-    Define a sorting key function for natural sorting of filenames.
-    """
-    import re
-    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
-
-
-def generate_gif_from_images(load_folder, save_folder, uuid):
-    image_files = [file for file in os.listdir(load_folder) if file.endswith('.jpg')]
-    image_files.sort(key=natural_sort_key)  # Sort the image files in alphanumeric order
+def generate_gif_from_images(load_folder, save_folder, image_list, uuid):
 
     images = []
-    for image_file in image_files:
+    for image_file in image_list:
         image_path = os.path.join(load_folder, image_file)
         image = Image.open(image_path)
         images.append(image)
@@ -111,10 +104,10 @@ def roll_dice(uuid, folder):
                 start = time.time()
                 # Save frames as JPG files
                 temp_folder = f'{folder}/temp'
-                save_frames(frames, temp_folder)
+                image_list= save_frames(frames, temp_folder)
 
                 # Create GIF from images
-                generate_gif_from_images(temp_folder, folder, uuid)
+                generate_gif_from_images(temp_folder, folder, image_list, uuid)
                 print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
 
                 # clean up temp folder
