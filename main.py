@@ -1,3 +1,4 @@
+import base64
 import os
 import uuid
 import requests
@@ -37,12 +38,12 @@ def page_roll_dice():
 
         start_time_detection = time.time()
         detection_text = roll_data['detections']
-        gif_bytes = roll_data['gif_bytes']
+        gif_base64 = roll_data['gif_base64']
         time_elapsed_detection = time.time() - start_time_detection
         time_elapsed = time.time() - start_time
 
         return render_template('roll.html',
-                               result_gif_base64=gif_bytes,
+                               result_gif_base64=gif_base64,
                                detection_text=detection_text,
                                time_elapsed=time_elapsed,
                                time_elapsed_detection=time_elapsed_detection)
@@ -58,11 +59,12 @@ def api_roll_dice():
     # Call the roll dice method
     # Get the image, predict and return
     _, gif_bytes = roll_dice(request_uuid, RESULT_FOLDER)
+    gif_base64 = base64.b64encode(gif_bytes.getvalue()).decode('utf-8')
     detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.png")
 
     return jsonify({"detections":  detection,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.png",
-                    "gif_bytes": gif_bytes
+                    "gif_base64": gif_base64
                     })
 
 

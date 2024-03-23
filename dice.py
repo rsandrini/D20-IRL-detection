@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import cv2
 import numpy as np
 import imageio
@@ -77,7 +79,8 @@ def roll_dice(uuid, folder):
     print(f"Saving GIF {folder}/{uuid}.gif...")
     # imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
     # Save the GIF in memory
-    gif_bytes = imageio.mimwrite(None, frames, format='gif', duration=duration_per_frame, fps=15, palettesize=5)
+    gif_bytes = BytesIO()
+    imageio.mimwrite(gif_bytes, frames, format='gif', duration=duration_per_frame, fps=15, palettesize=5)
 
     print("Finishing...")
     cap.release()
