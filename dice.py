@@ -1,9 +1,9 @@
 import concurrent.futures
 from io import BytesIO
-from PIL import Image, ImageDraw
+from PIL import Image
 import cv2
 import numpy as np
-import imageio
+import os
 import RPi.GPIO as GPIO
 import time
 
@@ -16,7 +16,7 @@ def hardware_activation():
     GPIO.setmode(GPIO.BCM)  # BCM is the Broadcom SOC channel designation for GPIO numbering
     GPIO.setup(pin, GPIO.OUT)  # Set pin as an output pin
     try:
-        #Turn on the GPIO pin
+        # Turn on the GPIO pin
         GPIO.output(pin, GPIO.HIGH)
         print(f"GPIO {pin} is ON")
         time.sleep(roll_for)  # Wait for 5 seconds
@@ -34,8 +34,34 @@ def process_frame(frame):
     # frame = cv2.resize(frame, (320, 240))
     # reduce quality
     frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
-
     return frame
+
+
+def save_frames(frames, folder):
+    # Create folder if it doesn't exist
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    # Save frames as JPG files
+    for i, frame in enumerate(frames):
+        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        image.save(os.path.join(folder, f"frame_{i}.jpg"))
+
+
+def create_gif(frames, folder, uuid):
+    # Convert frames to GIF using imageio
+    duration_per_frame = 10  # in milliseconds
+
+    # Save the GIF
+    print(f"Saving GIF")
+    processed_images = [Image.fromarray(frame) for frame in frames]
+    processed_images[0].save(
+        f'{folder}/{uuid}.gif',
+        save_all=True,
+        append_images=processed_images[1:],  # append rest of the images
+        duration=duration_per_frame,  # in milliseconds
+        loop=0)
+    print("GIF saved")
 
 
 def roll_dice(uuid, folder):
@@ -69,32 +95,22 @@ def roll_dice(uuid, folder):
 
             # Stop recording when motion stops for at least 10 frames,
             # and continue recording if frames are still being detected since the last motion
-            if motion_frame_count == 0 and frames_since_last_motion >= 20:
+            if motion_frame_count == 0 and frames_since_last_motion >= 10:
                 print(f"Motion stopped with {len(frames)} frames detected.")
 
                 # Process frames concurrently
                 processed_frames = list(executor.map(process_frame, frames))
+
+                cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(processed_frames[-1], cv2.COLOR_RGB2BGR))
+
+                # Save frames as JPG files
+                save_frames(processed_frames, f'{folder}/temp')
+
+                # Create GIF from images
+                create_gif(processed_frames, folder, uuid)
+
                 break
 
-    # Save the last frame as an image
-    if len(frames) > 0:
-        print(f"Saving image")
-        cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(processed_frames[-1], cv2.COLOR_RGB2BGR))
-        print(f"Last frame saved as {folder}/{uuid}.jpg")
-
-    # Save the GIF in memory
-    #calculate elapse time
-    start_time = time.time()
-    print(f"Processing GIF")
-    processed_images = [Image.fromarray(frame) for frame in processed_frames]
-    processed_images[0].save(
-        f'{folder}/{uuid}.gif',
-        save_all=True,
-        append_images=processed_images[1:],  # append rest of the images
-        duration=10,  # in milliseconds
-        loop=0)
-    elapsed_time = time.time() - start_time
-    print(f"GIF generated in {elapsed_time} seconds")
     print("Finishing...")
     cap.release()
     print("Camera released")
