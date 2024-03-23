@@ -45,13 +45,13 @@ class ObjectDetector:
         else:
             boxes_idx, classes_idx, scores_idx = 0, 1, 2
 
-        boxes = self.interpreter.get_tensor(self.output_details[boxes_idx]['index'])[0]
+        # boxes = self.interpreter.get_tensor(self.output_details[boxes_idx]['index'])[0]
         classes = self.interpreter.get_tensor(self.output_details[classes_idx]['index'])[0]
         scores = self.interpreter.get_tensor(self.output_details[scores_idx]['index'])[0]
 
         detections = []
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0):
-                detections.append([self.labels[int(classes[i])], scores[i] * 100])
+                detections.append([self.labels[int(classes[i])], f"{int(scores[i] * 100)}%"])
 
         return detections

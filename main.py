@@ -38,10 +38,16 @@ def page_roll_dice():
         print(roll_data)
 
         result_gif = roll_data['gif']
+        start_time_detection = time.time()
         detection_text = roll_data['detections']
+        time_elapsed_detection = time.time() - start_time_detection
         time_elapsed = time.time() - start_time
 
-        return render_template('roll.html', result_gif=result_gif, detection_text=detection_text, time_elapsed=time_elapsed)
+        return render_template('roll.html',
+                               result_gif=result_gif,
+                               detection_text=detection_text,
+                               time_elapsed=time_elapsed,
+                               time_elapsed_detection=time_elapsed_detection)
     except Exception as e:
         raise
 
