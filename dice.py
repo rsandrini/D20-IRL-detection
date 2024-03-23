@@ -74,8 +74,6 @@ def roll_dice(uuid, folder):
                 break
         processed_frames = list(executor.map(process_frame, frames))
 
-    # Convert frames to GIF using imageio
-    duration_per_frame = 0.03  # total_duration / len(frames)  # Decreased duration per frame
 
     # Save the last frame as an image
     if len(frames) > 0:
@@ -86,7 +84,8 @@ def roll_dice(uuid, folder):
     # Save the GIF in memory
     print(f"Saving GIF in memory")
     gif_bytes = BytesIO()
-    imageio.mimwrite(gif_bytes, processed_frames, format='gif', duration=duration_per_frame, fps=15, palettesize=5)
+    print(processed_frames)
+    imageio.mimwrite(gif_bytes, processed_frames, format='gif', fps=20, palettesize=5)
 
     print("Finishing...")
     cap.release()
