@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roll Dice</title>
+</head>
+<body>
+    <h1>Roll Result</h1>
+    <div>
+        <img src="{{ result_gif }}" alt="Result Gif">
+    </div>
+    <div>
+        <p>{{ detection_text }}</p>
+        <p>Elapsed time: {{ time_elapsed }}</p>
+    </div>
+    <form action="/roll" method="POST">
+        <input type="submit" value="Roll Again">
+    </form>
+</body>
+</html>
