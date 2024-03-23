@@ -25,8 +25,7 @@ def hardware_activation():
         GPIO.cleanup()  # Clean up GPIO settings
 
 
-def roll_dice(uuid, folder):
-    cap = cv2.VideoCapture(0)
+def roll_dice(cap, uuid, folder):
 
     last_mean = 0
     frames_recorded = 0  # Count of frames recorded for GIF
@@ -46,9 +45,9 @@ def roll_dice(uuid, folder):
         if frames_recorded % frame_skip == 0:
             # Reduce resolution
             last_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = cv2.resize(last_frame, (320, 240))  # Adjust resolution as needed
+            #frame = cv2.resize(last_frame, (320, 240))  # Adjust resolution as needed
 
-            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            #frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
         frames_recorded += 1
         frames_since_last_motion += 1
@@ -70,12 +69,14 @@ def roll_dice(uuid, folder):
 
     # Save the last frame as an image
     if len(frames) > 0:
+        print(f"Saving image")
         cv2.imwrite(f'{folder}/{uuid}.png', cv2.cvtColor(last_frame, cv2.COLOR_RGB2BGR))
         print(f"Last frame saved as {folder}/{uuid}.png")
 
     # Adjust the size and quality of the GIF
-    print(f"Saving GIF {folder}/{uuid}.gif...")
-    imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
+    #print(f"Saving GIF {folder}/{uuid}.gif...")
+    #imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
 
     print("Finishing...")
     cap.release()
+    print("Camera released")
