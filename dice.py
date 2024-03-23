@@ -53,6 +53,7 @@ def roll_dice(uuid, folder):
             last_mean = np.mean(gray)
 
             if frames_recorded % frame_skip == 0:
+                last_frame = frame
                 frames.append(frame)  # Add original frame to the list
 
             frames_recorded += 1
@@ -79,7 +80,7 @@ def roll_dice(uuid, folder):
     # Save the last frame as an image
     if len(processed_frames) > 0:
         print(f"Saving image")
-        cv2.imwrite(f'{folder}/{uuid}.png', cv2.cvtColor(processed_frames[-1], cv2.COLOR_RGB2BGR))
+        cv2.imwrite(f'{folder}/{uuid}.png', cv2.cvtColor(last_frame, cv2.COLOR_RGB2BGR))
         print(f"Last frame saved as {folder}/{uuid}.png")
 
     # Save the GIF in memory
@@ -90,4 +91,4 @@ def roll_dice(uuid, folder):
     print("Finishing...")
     cap.release()
     print("Camera released")
-    return processed_frames[-1], gif_bytes
+    return last_frame, gif_bytes
