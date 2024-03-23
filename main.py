@@ -42,7 +42,7 @@ def page_roll_dice():
         time_elapsed = time.time() - start_time
 
         return render_template('roll.html',
-                               result_gif=gif_bytes,
+                               result_gif_base64=gif_bytes,
                                detection_text=detection_text,
                                time_elapsed=time_elapsed,
                                time_elapsed_detection=time_elapsed_detection)
