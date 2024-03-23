@@ -33,10 +33,11 @@ def page_roll_dice():
 
     try:
         # Extract data from the response
-        _, gif_bytes = roll_data = roll_response.json()
+        roll_data = roll_response.json()
 
         start_time_detection = time.time()
         detection_text = roll_data['detections']
+        gif_bytes = roll_data['gif_bytes']
         time_elapsed_detection = time.time() - start_time_detection
         time_elapsed = time.time() - start_time
 
@@ -56,12 +57,13 @@ def api_roll_dice():
 
     # Call the roll dice method
     # Get the image, predict and return
-    roll_dice(request_uuid, RESULT_FOLDER)
+    _, gif_bytes = roll_dice(request_uuid, RESULT_FOLDER)
     detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.png")
 
     return jsonify({"detections":  detection,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.png",
-                    "gif": f"{RESULT_FOLDER}/{request_uuid}.gif"})
+                    "gif_bytes": gif_bytes
+                    })
 
 
 if __name__ == '__main__':
