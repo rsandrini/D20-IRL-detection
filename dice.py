@@ -83,10 +83,10 @@ def roll_dice(uuid, folder):
     # Save the GIF in memory
     print(f"Saving GIF in memory")
     processed_images = [Image.fromarray(frame) for frame in processed_frames]
-    processed_frames[0].save(
+    processed_images[0].save(
         f'{folder}/{uuid}.gif',
         save_all=True,
-        append_images=processed_frames[1:],  # append rest of the images
+        append_images=processed_images[1:],  # append rest of the images
         duration=1000,  # in milliseconds
         loop=0)
 
