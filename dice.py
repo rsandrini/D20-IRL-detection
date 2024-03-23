@@ -45,9 +45,9 @@ def roll_dice(uuid, folder):
         if frames_recorded % frame_skip == 0:
             # Reduce resolution
             last_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            #frame = cv2.resize(last_frame, (320, 240))  # Adjust resolution as needed
 
-            #frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            frame = cv2.resize(last_frame, (320, 240))  # Adjust resolution as needed
+            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
         frames_recorded += 1
         frames_since_last_motion += 1
@@ -74,8 +74,8 @@ def roll_dice(uuid, folder):
         print(f"Last frame saved as {folder}/{uuid}.png")
 
     # Adjust the size and quality of the GIF
-    #print(f"Saving GIF {folder}/{uuid}.gif...")
-    #imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
+    print(f"Saving GIF {folder}/{uuid}.gif...")
+    imageio.mimsave(f'{folder}/{uuid}.gif', frames, duration=duration_per_frame, fps=15, palettesize=5)
 
     print("Finishing...")
     cap.release()
