@@ -1,3 +1,4 @@
+import base64
 import os
 import uuid
 import requests
@@ -17,12 +18,7 @@ app = Flask(__name__)
 detector = ObjectDetector(MODEL_FOLDER)
 
 
-@app.route('/', methods=['GET'])
-def home():
-    return render_template('index.html')
-
-
-@app.route('/roll', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def page_roll_dice():
     if request.method == 'GET':
         return render_template('roll.html')
@@ -35,7 +31,7 @@ def page_roll_dice():
         roll_data = roll_response.json()
 
         return render_template('roll.html',
-                               result_gif=roll_data['gif'],
+                               gif_base64=roll_data['gif_base64'],
                                result_image=roll_data['image'],
                                detection_text=roll_data['detections'],
                                time_elapsed=roll_data['time_elapsed'],
@@ -50,14 +46,15 @@ def api_roll_dice():
     # generate a new UUID for the request
     request_uuid = str(uuid.uuid4())
 
-    roll_dice(request_uuid, RESULT_FOLDER)
+    gif_bytes = roll_dice(request_uuid, RESULT_FOLDER)
+    gif_base64 = base64.b64encode(gif_bytes.getvalue()).decode('utf-8')
     start_time_detection = time.time()
     detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.png")
     time_elapsed_detection = time.time() - start_time_detection
     time_elapsed = time.time() - start_time
     return jsonify({"detections":  detection,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.png",
-                    "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
+                    "gif_base64": gif_base64,
                     "time_elapsed": time_elapsed,
                     "time_elapsed_detection": time_elapsed_detection
                     }
