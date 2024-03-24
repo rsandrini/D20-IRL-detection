@@ -44,8 +44,8 @@ def page_roll_dice():
 @app.route('/api/roll', methods=['POST'])
 def api_roll_dice():
     # capture form data
-    debug = request.form.get('debug', True)
-
+    debug = request.form.get('debug', False)
+    print(f"Debug: {debug}")
     start_time = time.time()
     # generate a new UUID for the request
     request_uuid = str(uuid.uuid4())
