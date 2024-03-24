@@ -30,6 +30,9 @@ def hardware_activation():
 
 def process_frames(frames):
     image_list = []
+    # if len(frames) > 30 cut some frames before the last 5 to keep it with 20 frames
+    if len(frames) > 30:
+        frames = frames[:10] + frames[-5:]
 
     for i, frame in enumerate(frames[-20:]):
         # Convert frame to RGB
