@@ -30,12 +30,7 @@ def hardware_activation():
 
 def process_frames(frames):
     image_list = []
-    # if len(frames) > 30 cut some frames before the last 5 to keep it with 20 frames
-    if len(frames) > 30:
-        frames = frames[0:10] + frames[-10:]
-
-    print(f"Processing {len(frames)} frames")
-    for i, frame in enumerate(frames):
+    for i, frame in enumerate(frames[-25]):
         # Convert frame to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         # Create BytesIO object to store image in memory
