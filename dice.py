@@ -57,7 +57,7 @@ def generate_gif_from_images(image_list, gif_name):
     print(f"GIF saved at: {gif_name}")
 
 
-def roll_dice(uuid, folder):
+def roll_dice(uuid, folder, debug):
     cap = cv2.VideoCapture(0)
     last_mean = 0
     frames_recorded = 0  # Count of frames recorded for GIF
@@ -94,22 +94,16 @@ def roll_dice(uuid, folder):
                 print(f"Motion stopped with {len(frames)} frames detected.")
 
                 cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(frames[-1], cv2.COLOR_RGB2BGR))
-
-                start = time.time()
-                # Create GIF from images
-                generate_gif_from_images(process_frames(frames), f'{folder}/{uuid}.gif')
-                print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
-
-                # clean up temp folder
-                # for file in os.listdir(temp_folder):
-                #     os.remove(os.path.join(temp_folder, file))
-
+                if debug:
+                    start = time.time()
+                    # Create GIF from images
+                    generate_gif_from_images(process_frames(frames), f'{folder}/{uuid}.gif')
+                    print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
                 break
 
     print("Finishing...")
     cap.release()
     print("Camera released")
-
 
 
 if __name__ == "__main__":

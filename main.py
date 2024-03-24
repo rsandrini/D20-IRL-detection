@@ -23,8 +23,9 @@ def page_roll_dice():
     if request.method == 'GET':
         return render_template('roll.html')
 
+    debug = request.form.get('debug', False)
     #lets count the elapsed time for the roll
-    roll_response = requests.post('http://localhost:5000/api/roll')
+    roll_response = requests.post('http://localhost:5000/api/roll', data=request.form)
 
     try:
         # Extract data from the response
@@ -42,11 +43,14 @@ def page_roll_dice():
 
 @app.route('/api/roll', methods=['POST'])
 def api_roll_dice():
+    # capture form data
+    debug = request.form.get('debug', True)
+
     start_time = time.time()
     # generate a new UUID for the request
     request_uuid = str(uuid.uuid4())
 
-    roll_dice(request_uuid, RESULT_FOLDER)
+    roll_dice(request_uuid, RESULT_FOLDER, debug)
 
     start_time_detection = time.time()
     detection = detector.detect_objects(f"{RESULT_FOLDER}/{request_uuid}.jpg")
