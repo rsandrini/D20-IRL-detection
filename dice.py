@@ -30,7 +30,7 @@ def hardware_activation():
 
 def process_frames(frames):
     image_list = []
-    for i, frame in enumerate(frames[-25]):
+    for i, frame in enumerate(frames[-25:]):
         # Convert frame to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         # Create BytesIO object to store image in memory
