@@ -30,9 +30,10 @@ def hardware_activation():
 
 def process_frames(frames):
     image_list = []
-    for i, frame in enumerate(frames):
+
+    for i, frame in enumerate(frames[-20:]):
         # Convert frame to RGB
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         # Create BytesIO object to store image in memory
         mem = BytesIO()
         # Save frame as JPEG to BytesIO object
@@ -90,7 +91,7 @@ def roll_dice(uuid, folder):
 
             # Stop recording when motion stops for at least 10 frames,
             # and continue recording if frames are still being detected since the last motion
-            if motion_frame_count == 0 and frames_since_last_motion >= 10:
+            if motion_frame_count == 0 and frames_since_last_motion >= 7:
                 print(f"Motion stopped with {len(frames)} frames detected.")
 
                 cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(frames[-1], cv2.COLOR_RGB2BGR))
