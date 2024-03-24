@@ -29,30 +29,23 @@ def hardware_activation():
 
 
 def process_frames(frames):
-
     image_list = []
-    # Save frames as JPG files
     for i, frame in enumerate(frames):
-        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        # store the image in memory
+        # Convert frame to RGB
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Create BytesIO object to store image in memory
         mem = BytesIO()
-        image.save(mem, format="JPEG")
+        # Save frame as JPEG to BytesIO object
+        Image.fromarray(frame_rgb).save(mem, format="JPEG")
+        # Move to the beginning of BytesIO object
+        mem.seek(0)
+        # Append BytesIO object to the list
         image_list.append(mem)
     return image_list
 
 
 def generate_gif_from_images(image_list, gif_name):
-    #
-    # images = []
-    # for image_file in image_list:
-    #     # Load the image from memory
-    #     image = Image.open(BytesIO(image_file))
-    #     image_path = os.path.join(load_folder, image_file)
-    #     image = Image.open(image_path)
-    #     images.append(image)
-
-    # Save the GIF
-    processed_images = [Image.fromarray(frame) for frame in image_list]
+    processed_images = [Image.open(mem) for mem in image_list]
     processed_images[0].save(
         gif_name,
         save_all=True,
