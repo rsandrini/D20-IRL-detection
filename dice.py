@@ -28,10 +28,7 @@ def hardware_activation():
         GPIO.cleanup()  # Clean up GPIO settings
 
 
-def save_frames(frames, folder):
-    # Create folder if it doesn't exist
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+def process_frames(frames):
 
     image_list = []
     # Save frames as JPG files
@@ -44,7 +41,7 @@ def save_frames(frames, folder):
     return image_list
 
 
-def generate_gif_from_images(save_folder, image_list, uuid):
+def generate_gif_from_images(image_list, gif_name):
     #
     # images = []
     # for image_file in image_list:
@@ -55,16 +52,16 @@ def generate_gif_from_images(save_folder, image_list, uuid):
     #     images.append(image)
 
     # Save the GIF
-    output_gif_path = os.path.join(save_folder, f'{uuid}.gif')
-    image_list[0].save(
-        output_gif_path,
+    processed_images = [Image.fromarray(frame) for frame in image_list]
+    processed_images[0].save(
+        gif_name,
         save_all=True,
-        append_images=image_list[1:],
+        append_images=processed_images[1:],
         duration=10,  # in milliseconds
         loop=0
     )
 
-    print(f"GIF saved at: {output_gif_path}")
+    print(f"GIF saved at: {gif_name}")
 
 
 def roll_dice(uuid, folder):
@@ -106,12 +103,8 @@ def roll_dice(uuid, folder):
                 cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(frames[-1], cv2.COLOR_RGB2BGR))
 
                 start = time.time()
-                # Save frames as JPG files
-                temp_folder = f'{folder}/temp'
-                image_list = save_frames(frames, temp_folder)
-
                 # Create GIF from images
-                generate_gif_from_images(folder, image_list, uuid)
+                generate_gif_from_images(process_frames(frames), f'{folder}/{uuid}.gif')
                 print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
 
                 # clean up temp folder
