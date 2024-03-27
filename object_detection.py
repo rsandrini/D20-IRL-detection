@@ -52,31 +52,40 @@ class ObjectDetector:
         scores = self.interpreter.get_tensor(self.output_details[scores_idx]['index'])[0]
 
         detections = []
+        used_ymin = []
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0 and len(detections) <= 1):
-                detections.append([self.labels[int(classes[i])], f"{int(scores[i] * 100)}%"])
-
                 # Get bounding box coordinates and draw box
-                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
                 ymin = int(max(1, (boxes[i][0] * imH)))
                 xmin = int(max(1, (boxes[i][1] * imW)))
                 ymax = int(min(imH, (boxes[i][2] * imH)))
                 xmax = int(min(imW, (boxes[i][3] * imW)))
 
+                # Check if the label overlaps with any existing labels
+                label = self.labels[int(classes[i])]  # Object label
+                label_text = '%s: %d%%' % (label, int(scores[i] * 100))
+                labelSize, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+
+                # Determine label position
+                label_ymin = ymin - 15  # Initial label position above bounding box
+                if label_ymin in used_ymin:  # If label position overlaps with another label, adjust
+                    label_ymin = ymin + labelSize[1] + 10  # Move label below bounding box
+                used_ymin.append(label_ymin)  # Keep track of used positions
+
+                # Draw bounding box
                 cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
 
-                # Draw label
-                object_name = self.labels[int(classes[i])]  # Look up object name from "labels" array using class index
-                label = '%s: %d%%' % (object_name, int(scores[i] * 100))  # Example: 'person: 72%'
-                labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)  # Get font size
-                label_ymin = max(ymin, labelSize[1] + 10)  # Make sure not to draw label too close to top of window
+                # Draw label background
                 cv2.rectangle(image, (xmin, label_ymin - labelSize[1] - 10),
-                              (xmin + labelSize[0], label_ymin + baseLine - 10), (255, 255, 255),
-                              cv2.FILLED)  # Draw white box to put label text in
-                cv2.putText(image, label, (xmin, label_ymin - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0),
-                            2)  # Draw label text
+                              (xmin + labelSize[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
+
+                # Draw label text
+                cv2.putText(image, label_text, (xmin, label_ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+
+                detections.append([label, f"{int(scores[i] * 100)}%"])
 
         # Save image
         cv2.imwrite(image_path_file, image)
 
         return detections
+
