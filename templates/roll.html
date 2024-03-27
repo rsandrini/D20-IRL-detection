@@ -63,9 +63,9 @@
         <div class="result-container">
             {% if gif %}
                 <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
-            {% else %}
-                <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
             {% endif %}
+                <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
+
             <div id="result-box" style="display: block;">
                 <h1>{{ detection_text }}</h1>
                 <p>
