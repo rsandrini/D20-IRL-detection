@@ -76,7 +76,6 @@
                 <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
                 <p>Elapsed total processing time: {{ time_elapsed }}</p>
             </div>
-
         {% endif %}
         <div class="form-container">
             <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
@@ -91,6 +90,7 @@
         function disableButton() {
             // Disable the button after form submission
             document.getElementById("rollButton").disabled = true;
+            // Show the loading GIF
             document.getElementById("loading-gif").removeAttribute("hidden");
         }
     </script>
