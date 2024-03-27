@@ -94,8 +94,19 @@ The trained TensorFlow Lite model is deployed on the Raspberry Pi for real-time 
 The 3d model of the dice was created using Sketup and the STL file is available in the repository. The 3d model was used to create the custom dataset for training the object detection model. Unfortunatelly, the 3d model is not precise enough to store the raspberry pi and the servo motor in the box. A new version will be modeled in the future.
 
 
-##Conclusion
+## Conclusion
 
 Real-time object detection and classification on edge devices like the Raspberry Pi open up numerous possibilities for practical applications. This project serves as a demonstration of how machine learning models can be trained, converted, and deployed for real-world tasks, such as dice classification, in a resource-constrained environment.
 
 By following the steps outlined in this project, you'll gain insights into the entire workflow of training, converting, and deploying TensorFlow Lite models on edge devices, paving the way for further exploration and experimentation in the field of edge AI.
+
+# TODO
+
+- [ ] Create a more precise 3d model for the dice box
+- [ ] API authentication for external usage
+- [ ] Captcha implementation for website usage
+- [ ] Queue system for multiple requests
+- [ ] Improve the 3d model to store the raspberry pi and the servo motor
+- [ ] Fine tune the object detection model for better accuracy
+- [ ] Implement a more robust image processing pipeline
+- [ ] Add support for select an random dice in the roll in the response
