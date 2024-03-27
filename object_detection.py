@@ -54,7 +54,6 @@ class ObjectDetector:
         detections = []
 
         # Store coordinates of all detected boxes and labels
-        all_boxes = []
         all_labels = []
 
         for i in range(len(scores)):
@@ -70,14 +69,6 @@ class ObjectDetector:
                 label_text = self.labels[int(classes[i])]
                 label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
                 label_rect = (xmin, ymin - label_size[1] - 10, xmin + label_size[0], ymin)
-
-                # Check for collision with other boxes
-                for other_box in all_boxes:
-                    if self.is_collision(box_rect, other_box):
-                        # Adjust current box to a clear position
-                        ymin = other_box[3] + 10
-                        ymax = ymin + (xmax - xmin)
-                        break
 
                 # Check for collision with other labels
                 for other_label in all_labels:
@@ -98,7 +89,6 @@ class ObjectDetector:
                 cv2.putText(image, label_text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
 
                 # Update lists of all boxes and labels
-                all_boxes.append((xmin, ymin, xmax, ymax))
                 all_labels.append((xmin, ymin - label_size[1] - 10, xmin + label_size[0], ymin))
 
                 detections.append([label_text, f"{int(scores[i] * 100)}%"])
