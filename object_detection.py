@@ -61,15 +61,17 @@ class ObjectDetector:
                 ymax = int(min(imH, (boxes[i][2] * imH)))
                 xmax = int(min(imW, (boxes[i][3] * imW)))
 
-                # Check if the label overlaps with any existing labels
+                # Check if the label overlaps with any existing labels or extends beyond the image boundaries
                 label = self.labels[int(classes[i])]  # Object label
                 label_text = '%s: %d%%' % (label, int(scores[i] * 100))
                 labelSize, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
 
                 # Determine label position
                 label_ymin = ymin - 15  # Initial label position above bounding box
-                if label_ymin in used_ymin:  # If label position overlaps with another label, adjust
+                if label_ymin in used_ymin or label_ymin < 0:  # If label position overlaps with another label or out of the image
                     label_ymin = ymin + labelSize[1] + 10  # Move label below bounding box
+                    if label_ymin + labelSize[1] > imH:  # If label still extends beyond the image
+                        label_ymin = max(0, ymin - labelSize[1] - 10)  # Move label above bounding box
                 used_ymin.append(label_ymin)  # Keep track of used positions
 
                 # Draw bounding box
@@ -88,4 +90,3 @@ class ObjectDetector:
         cv2.imwrite(image_path_file, image)
 
         return detections
-
