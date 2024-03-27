@@ -90,15 +90,15 @@
 
     <script>
         function disableButton() {
-            // Disable the button after form submission
-            document.getElementById("rollButton").disabled = true;
-            document.getElementById("rollButton").value = "Rolling...";
             // Show the loading GIF
             document.getElementById("loading-gif").style.display = "block";
             document.getElementById("roll-gif").style.display = "none";
             document.getElementById("info-container").style.display = "none";
             document.getElementById("result-box").style.display = "none";
 
+            // Disable the button after form submission
+            document.getElementById("rollButton").disabled = true;
+            document.getElementById("rollButton").value = "Rolling...";
         }
     </script>
 </body>
