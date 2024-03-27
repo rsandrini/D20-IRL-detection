@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roll Dice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .form-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Roll Result</h1>
+        <div class="result-container">
+            {% if gif %}
+                <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
+            {% endif %}
+                <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
+
+            <div id="result-box" style="display: block;">
+                <h1>{{ detection_text }}</h1>
+                <p>
+                    <img src="{{ result_image }}" id="result-img">
+                </p>
+            </div>
+        </div>
+        {% if time_elapsed_detection %}
+            <div class="info-container" id="info-container" style="display: block;">
+                <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
+                <p>Elapsed total processing time: {{ time_elapsed }}</p>
+            </div>
+        {% endif %}
+        <div class="form-container">
+            <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
+                Show gif
+                <input type="checkbox" name="debug" id="debug" checked>
+                <input type="submit" id="rollButton" value="Let's roll!">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function disableButton() {
+            // Show the loading GIF
+            document.getElementById("loading-gif").style.display = "block";
+            document.getElementById("roll-gif").style.display = "none";
+            document.getElementById("info-container").style.display = "none";
+            document.getElementById("result-box").style.display = "none";
+
+            // Disable the button after form submission
+            document.getElementById("rollButton").disabled = true;
+            document.getElementById("rollButton").value = "Rolling...";
+        }
+    </script>
+</body>
+</html>
