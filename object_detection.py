@@ -77,7 +77,6 @@ class ObjectDetector:
                             2)  # Draw label text
 
         # Save image
-        # image_savepath = os.path.join(image_path, image_name)
-        cv2.imwrite(image_name, image)
+        cv2.imwrite(image_path_file, image)
 
         return detections
