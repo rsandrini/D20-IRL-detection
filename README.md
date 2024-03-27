@@ -1,4 +1,4 @@
-##Real-time D20 Dice Classification with Raspberry Pi
+## Real-time D20 Dice Classification with Raspberry Pi using hardware integration
 
 This project is based on the tutorial provided in the YouTube video [link](https://www.youtube.com/watch?v=XZ7FYAMCc4M), where we implement a D20 dice classification system using TensorFlow 2.0. The system integrates with a Raspberry Pi and additional hardware to physically roll a dice, capture an image, detect the dice, classify it, and return the result in real-time.
 
@@ -7,7 +7,7 @@ This project is based on the tutorial provided in the YouTube video [link](https
 ![](README/output.gif)
 ![](README/output.jpg)
 
-###Objective
+### Objective
 
 The primary objective of this project is to demonstrate the process of training an object detection model and converting it into TensorFlow Lite format. This allows us to deploy the model on edge devices like the Raspberry Pi for real-time inference.
 Key Components
@@ -17,7 +17,7 @@ Raspberry Pi: Integrated with additional hardware to roll the dice and capture i
 Image Processing: Images captured by the Raspberry Pi are processed to detect and classify the rolled dice.
 TensorFlow Lite: The trained model is converted to TensorFlow Lite format, enabling efficient deployment on edge devices.
 
-###Usage
+### Usage
 
 To replicate this project, follow these steps:
 
