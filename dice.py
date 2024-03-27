@@ -90,7 +90,7 @@ def roll_dice(uuid, folder, debug):
 
             # Stop recording when motion stops for at least 10 frames,
             # and continue recording if frames are still being detected since the last motion
-            if motion_frame_count == 0 and frames_since_last_motion >= 7:
+            if motion_frame_count == 0 and frames_since_last_motion >= 10:
                 print(f"Motion stopped with {len(frames)} frames detected.")
 
                 cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(frames[-1], cv2.COLOR_RGB2BGR))
