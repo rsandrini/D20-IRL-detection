@@ -52,46 +52,35 @@ class ObjectDetector:
         scores = self.interpreter.get_tensor(self.output_details[scores_idx]['index'])[0]
 
         detections = []
-
-        # Store coordinates of all detected boxes and labels
         all_labels = []
-
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0 and len(detections) <= 1):
-                # Get bounding box coordinates
+                detections.append([self.labels[int(classes[i])], f"{int(scores[i] * 100)}%"])
+
+                # Get bounding box coordinates and draw box
+                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
                 ymin = int(max(1, (boxes[i][0] * imH)))
                 xmin = int(max(1, (boxes[i][1] * imW)))
                 ymax = int(min(imH, (boxes[i][2] * imH)))
                 xmax = int(min(imW, (boxes[i][3] * imW)))
 
-                # Check for collision with previously detected boxes and labels
-                box_rect = (xmin, ymin, xmax, ymax)
                 label_text = self.labels[int(classes[i])]
                 label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
                 label_rect = (xmin, ymin - label_size[1] - 10, xmin + label_size[0], ymin)
 
+                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
                 # Check for collision with other labels
                 for other_label in all_labels:
                     if self.is_collision(label_rect, other_label):
                         # Adjust current label to a clear position
-                        ymin = other_label[3] + 10
-                        ymax = ymin + (xmax - xmin)
-                        break
+                        label_rect.ymin = other_label[3] + 10
+                        label_rect.ymax = ymin + (xmax - xmin)
 
-                # Draw bounding box
-                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
-
-                # Draw label background
                 cv2.rectangle(image, (xmin, ymin - label_size[1] - 10),
                               (xmin + label_size[0], ymin + 5), (255, 255, 255), cv2.FILLED)
 
-                # Draw label text
                 cv2.putText(image, label_text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
 
-                # Update lists of all boxes and labels
-                all_labels.append((xmin, ymin - label_size[1] - 10, xmin + label_size[0], ymin))
-
-                detections.append([label_text, f"{int(scores[i] * 100)}%"])
 
         # Save image
         cv2.imwrite(image_path_file, image)
