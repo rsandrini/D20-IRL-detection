@@ -23,22 +23,27 @@ def page_roll_dice():
     if request.method == 'GET':
         return render_template('roll.html')
 
-    debug = request.form.get('debug', False)
     #lets count the elapsed time for the roll
     roll_response = requests.post('http://localhost:5000/api/roll', data=request.form)
 
+    # Extract data from the response
     try:
-        # Extract data from the response
         roll_data = roll_response.json()
-
-        return render_template('roll.html',
-                               gif=roll_data['gif'],
-                               result_image=roll_data['image'],
-                               detection_text=roll_data['detections'],
-                               time_elapsed=roll_data['time_elapsed'],
-                               time_elapsed_detection=roll_data['time_elapsed_detection'])
     except Exception as e:
-        raise
+        print(e)
+        return render_template('roll.html',
+                               gif=None,
+                               result_image=None,
+                               detection_text=None,
+                               time_elapsed=0,
+                               time_elapsed_detection=0)
+
+    return render_template('roll.html',
+                           gif=roll_data['gif'],
+                           result_image=roll_data['image'],
+                           detection_text=roll_data['detections'],
+                           time_elapsed=roll_data['time_elapsed'],
+                           time_elapsed_detection=roll_data['time_elapsed_detection'])
 
 
 @app.route('/api/roll', methods=['POST'])
