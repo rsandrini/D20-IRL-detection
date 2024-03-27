@@ -4,6 +4,9 @@ This project is based on the tutorial provided in the YouTube video [link](https
 
 ![](README/img.png)
 
+![](3d model/imgs/IMG_0838-ezgif.com-video-to-gif-converter.gif)
+
+
 ![](README/output.gif)
 ![](README/output.jpg)
 
@@ -109,4 +112,4 @@ By following the steps outlined in this project, you'll gain insights into the e
 - [ ] Improve the 3d model to store the raspberry pi and the servo motor
 - [ ] Fine tune the object detection model for better accuracy
 - [ ] Implement a more robust image processing pipeline
-- [ ] Add support for select an random dice in the roll in the response
+- [ ] Add support for select a random dice in the roll in the response
