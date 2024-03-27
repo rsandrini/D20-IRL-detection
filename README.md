@@ -4,7 +4,7 @@ This project is based on the tutorial provided in the YouTube video [link](https
 
 ![](README/img.png)
 
-![](3d model/imgs/IMG_0838-ezgif.com-video-to-gif-converter.gif)
+![](3d_model/imgs/hardware.gif)
 
 
 ![](README/output.gif)
