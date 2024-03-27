@@ -58,7 +58,6 @@ class ObjectDetector:
                 detections.append([self.labels[int(classes[i])], f"{int(scores[i] * 100)}%"])
 
                 # Get bounding box coordinates and draw box
-                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
                 ymin = int(max(1, (boxes[i][0] * imH)))
                 xmin = int(max(1, (boxes[i][1] * imW)))
                 ymax = int(min(imH, (boxes[i][2] * imH)))
@@ -66,21 +65,24 @@ class ObjectDetector:
 
                 label_text = self.labels[int(classes[i])]
                 label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-                label_rect = (xmin, ymin - label_size[1] - 10, xmin + label_size[0], ymin)
+                label_ymin = max(label_size[1] + 10, ymin)  # Ensure label doesn't extend beyond top of the image
 
-                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
+                if label_ymin < label_size[1] + 10:
+                    label_ymin = ymin + label_size[1] + 10  # Move label above the box if it extends beyond the top
+
                 # Check for collision with other labels
                 for other_label in all_labels:
-                    if self.is_collision(label_rect, other_label):
+                    other_label_rect = cv2.getTextSize(other_label[0], cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                    if self.is_collision((xmin, label_ymin, label_size[0], label_size[1]), other_label_rect):
                         # Adjust current label to a clear position
-                        label_rect.ymin = other_label[3] + 10
-                        label_rect.ymax = ymin + (xmax - xmin)
+                        label_ymin = max(other_label[1] + label_size[1] + 10, ymin + label_size[1] + 10)  # Ensure label doesn't overlap with other labels
 
-                cv2.rectangle(image, (xmin, ymin - label_size[1] - 10),
-                              (xmin + label_size[0], ymin + 5), (255, 255, 255), cv2.FILLED)
+                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
+                cv2.rectangle(image, (xmin, label_ymin - label_size[1] - 10),
+                              (xmin + label_size[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
+                cv2.putText(image, label_text, (xmin, label_ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
 
-                cv2.putText(image, label_text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-
+                all_labels.append((label_text, label_ymin))  # Store label and its y-coordinate
 
         # Save image
         cv2.imwrite(image_path_file, image)
