@@ -64,7 +64,7 @@
             {% if gif %}
                 <img src="{{ gif }}" alt="Roll GIF">
             {% else %}
-                <img src="static/gif/loading.gif" alt="loading GIF" hidden id="loading-gif">
+                <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
             {% endif %}
             <h1>{{ detection_text }}</h1>
             <p>
@@ -91,7 +91,7 @@
             // Disable the button after form submission
             document.getElementById("rollButton").disabled = true;
             // Show the loading GIF
-            document.getElementById("loading-gif").removeAttribute("hidden");
+            document.getElementById("loading-gif").style.display = "block";
         }
     </script>
 </body>
