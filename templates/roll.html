@@ -66,7 +66,7 @@
             {% else %}
                 <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
             {% endif %}
-            <div id="result-box">
+            <div id="result-box" style="display: block;">
                 <h1>{{ detection_text }}</h1>
                 <p>
                     <img src="{{ result_image }}" id="result-img">
@@ -74,7 +74,7 @@
             </div>
         </div>
         {% if time_elapsed_detection %}
-            <div class="info-container" id="info-container">
+            <div class="info-container" id="info-container" style="display: block;">
                 <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
                 <p>Elapsed total processing time: {{ time_elapsed }}</p>
             </div>
@@ -92,6 +92,7 @@
         function disableButton() {
             // Disable the button after form submission
             document.getElementById("rollButton").disabled = true;
+            document.getElementById("rollButton").value = "Rolling...";
             // Show the loading GIF
             document.getElementById("loading-gif").style.display = "block";
             document.getElementById("roll-gif").style.display = "none";
