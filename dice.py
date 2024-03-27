@@ -51,7 +51,7 @@ def generate_gif_from_images(image_list, gif_name):
         save_all=True,
         append_images=processed_images[1:],
         duration=10,  # in milliseconds
-        loop=0
+        loop=1
     )
 
     print(f"GIF saved at: {gif_name}")
