@@ -58,24 +58,26 @@
     </style>
 </head>
 <body>
-    <h1>Roll Result</h1>
-    <div>
-        <img src="{{ gif }}" alt="Roll GIF">
-        <h1>{{ detection_text }}</h1>
-        <p>
-            <img src="{{ result_image }}">
-        </p>
+    <div class="container">
+        <h1>Roll Result</h1>
+        <div class="result-container">
+            <img src="{{ gif }}" alt="Roll GIF">
+            <h1>{{ detection_text }}</h1>
+            <p>
+                <img src="{{ result_image }}">
+            </p>
+        </div>
+        <div class="info-container">
+            <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
+            <p>Elapsed total processing time: {{ time_elapsed }}</p>
+        </div>
+        <div class="form-container">
+            <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
+                <input type="checkbox" name="debug" id="debug" checked>
+                <input type="submit" id="rollButton" value="Let's roll!">
+            </form>
+        </div>
     </div>
-    <div>
-
-        <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
-        <p>Elapsed total processing time: {{ time_elapsed }}</p>
-
-    </div>
-    <form action="/" method="POST">
-        <input type="checkbox" name="debug" id="debug" checked>
-        <input type="submit" value="Lets roll!">
-    </form>
 
     <script>
         function disableButton() {
