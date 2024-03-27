@@ -62,17 +62,19 @@
         <h1>Roll Result</h1>
         <div class="result-container">
             {% if gif %}
-                <img src="{{ gif }}" alt="Roll GIF">
+                <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
             {% else %}
                 <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
             {% endif %}
-            <h1>{{ detection_text }}</h1>
-            <p>
-                <img src="{{ result_image }}">
-            </p>
+            <div id="result-box">
+                <h1>{{ detection_text }}</h1>
+                <p>
+                    <img src="{{ result_image }}" id="result-img">
+                </p>
+            </div>
         </div>
         {% if time_elapsed_detection %}
-            <div class="info-container">
+            <div class="info-container" id="info-container">
                 <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
                 <p>Elapsed total processing time: {{ time_elapsed }}</p>
             </div>
@@ -92,6 +94,10 @@
             document.getElementById("rollButton").disabled = true;
             // Show the loading GIF
             document.getElementById("loading-gif").style.display = "block";
+            document.getElementById("roll-gif").style.display = "none";
+            document.getElementById("info-container").style.display = "none";
+            document.getElementById("result-box").style.display = "none";
+
         }
     </script>
 </body>
