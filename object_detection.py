@@ -91,6 +91,9 @@ class ObjectDetector:
 
     def is_collision(self, rect1, rect2):
         # Check for collision between two rectangles
+        if len(rect2) < 4:
+            return False
+
         x1, y1, w1, h1 = rect1
         x2, y2, w2, h2 = rect2
 
