@@ -52,41 +52,68 @@ class ObjectDetector:
         scores = self.interpreter.get_tensor(self.output_details[scores_idx]['index'])[0]
 
         detections = []
-        used_ymin = []
+
+        # Store coordinates of all detected boxes and labels
+        all_boxes = []
+        all_labels = []
+
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0 and len(detections) <= 1):
-                # Get bounding box coordinates and draw box
+                # Get bounding box coordinates
                 ymin = int(max(1, (boxes[i][0] * imH)))
                 xmin = int(max(1, (boxes[i][1] * imW)))
                 ymax = int(min(imH, (boxes[i][2] * imH)))
                 xmax = int(min(imW, (boxes[i][3] * imW)))
 
-                # Check if the label overlaps with any existing labels or extends beyond the image boundaries
-                label = self.labels[int(classes[i])]  # Object label
-                label_text = '%s: %d%%' % (label, int(scores[i] * 100))
-                labelSize, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                # Check for collision with previously detected boxes and labels
+                box_rect = (xmin, ymin, xmax, ymax)
+                label_text = self.labels[int(classes[i])]
+                label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                label_rect = (xmin, ymin - label_size[1] - 10, xmin + label_size[0], ymin)
 
-                # Determine label position
-                label_ymin = ymin - 15  # Initial label position above bounding box
-                if label_ymin in used_ymin or label_ymin < 0:  # If label position overlaps with another label or out of the image
-                    label_ymin = ymin + labelSize[1] + 10  # Move label below bounding box
-                    if label_ymin + labelSize[1] > imH:  # If label still extends beyond the image
-                        label_ymin = max(0, ymin - labelSize[1] - 10)  # Move label above bounding box
-                used_ymin.append(label_ymin)  # Keep track of used positions
+                # Check for collision with other boxes
+                for other_box in all_boxes:
+                    if self.is_collision(box_rect, other_box):
+                        # Adjust current box to a clear position
+                        ymin = other_box[3] + 10
+                        ymax = ymin + (xmax - xmin)
+                        break
+
+                # Check for collision with other labels
+                for other_label in all_labels:
+                    if self.is_collision(label_rect, other_label):
+                        # Adjust current label to a clear position
+                        ymin = other_label[3] + 10
+                        ymax = ymin + (xmax - xmin)
+                        break
 
                 # Draw bounding box
                 cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
 
                 # Draw label background
-                cv2.rectangle(image, (xmin, label_ymin - labelSize[1] - 10),
-                              (xmin + labelSize[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
+                cv2.rectangle(image, (xmin, ymin - label_size[1] - 10),
+                              (xmin + label_size[0], ymin + 5), (255, 255, 255), cv2.FILLED)
 
                 # Draw label text
-                cv2.putText(image, label_text, (xmin, label_ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+                cv2.putText(image, label_text, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
 
-                detections.append([label, f"{int(scores[i] * 100)}%"])
+                # Update lists of all boxes and labels
+                all_boxes.append((xmin, ymin, xmax, ymax))
+                all_labels.append((xmin, ymin - label_size[1] - 10, xmin + label_size[0], ymin))
+
+                detections.append([label_text, f"{int(scores[i] * 100)}%"])
 
         # Save image
         cv2.imwrite(image_path_file, image)
 
         return detections
+
+    def is_collision(self, rect1, rect2):
+        # Check for collision between two rectangles
+        x1, y1, w1, h1 = rect1
+        x2, y2, w2, h2 = rect2
+
+        if (x1 < x2 + w2 and x1 + w1 > x2 and
+                y1 < y2 + h2 and y1 + h1 > y2):
+            return True
+        return False
