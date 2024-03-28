@@ -107,6 +107,11 @@
             if (captchaBox) {
                 captchaBox.style.display = "none";
             }
+            
+            var showGifBox = document.getElementById("show-gif-box");
+            if (showGifBox) {
+                showGifBox.style.display = "none";
+            }
 
             var loadingGif = document.getElementById("loading-gif");
 
@@ -115,11 +120,6 @@
                 // Hide the loading GIF
                 if (loadingGif) {
                     loadingGif.style.display = "block";
-                }
-
-                var showGifBox = document.getElementById("show-gif-box");
-                if (showGifBox) {
-                    showGifBox.style.display = "none";
                 }
 
                 // Show the roll GIF if it exists
