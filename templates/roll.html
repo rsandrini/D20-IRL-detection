@@ -101,16 +101,14 @@
             }
 
             var loadingGif = document.getElementById("loading-gif");
-            if (loadingGif) {
-                loadingGif.style.display = "block";
-            }
 
             // Delay the following actions by 1 second (1000 milliseconds)
             setTimeout(function() {
                 // Hide the loading GIF
                 if (loadingGif) {
-                    loadingGif.style.display = "none";
+                    loadingGif.style.display = "block";
                 }
+
 
                 // Show the roll GIF if it exists
                 var rollGif = document.getElementById("roll-gif");
