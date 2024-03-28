@@ -83,8 +83,11 @@ def api_roll_dice():
     start_time_detection = time.time()
     detection = detector.detect_objects(f"{RESULT_FOLDER}", f"{request_uuid}.jpg")
     try:
-        detection = f"{detection[0][0]} and {detection[1][0]}"
-    except:
+        if len(detection) == 1:
+            detection = f"{detection[0][0]}"
+        else:
+            detection = f"{detection[0][0]} and {detection[1][0]}"
+    except :
         detection = "No dice detected :("
     time_elapsed_detection = round(time.time() - start_time_detection, 2)
     time_elapsed = round(time.time() - start_time, 2)
