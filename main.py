@@ -41,7 +41,7 @@ detector = ObjectDetector(MODEL_FOLDER)
 def page_roll_dice():
 
     if (request.method == 'GET') or request.method == 'POST' and not captcha.validate():
-        return render_template('roll.html', error="invalid captcha")
+        return render_template('roll.html', error_message="invalid captcha")
 
     #TODO: calling local api now, improve this !
     roll_response = requests.post('http://localhost:5000/api/roll', data=request.form)
@@ -56,7 +56,8 @@ def page_roll_dice():
                                result_image=None,
                                detection_text=None,
                                time_elapsed=0,
-                               time_elapsed_detection=0)
+                               time_elapsed_detection=0,
+                               error_message=e)
 
     return render_template('roll.html',
                            gif=roll_data['gif'],
