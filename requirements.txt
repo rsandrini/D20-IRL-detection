@@ -7,3 +7,5 @@ pillow
 captcha
 Flask-Session
 flask-session-captcha
+
+redis

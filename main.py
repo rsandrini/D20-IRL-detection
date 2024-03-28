@@ -6,6 +6,7 @@ from flask import Flask, request, render_template, jsonify
 from flask_session import Session
 from flask_session_captcha import FlaskSessionCaptcha
 from object_detection import ObjectDetector
+import redis
 from dice import *
 
 #load the .env file
@@ -25,7 +26,10 @@ app.config['CAPTCHA_LENGTH'] = 5
 app.config['CAPTCHA_WIDTH'] = 200
 app.config['CAPTCHA_HEIGHT'] = 160
 
+conn = redis.from_url(os.getenv('REDIS_URL'))
+
 app.config['SESSION_TYPE'] = 'redis' # or other type of drivers for session, see https://flask-session.readthedocs.io/en/latest/
+app.config['SESSION_REDIS'] = conn
 Session(app)
 captcha = FlaskSessionCaptcha(app)
 
