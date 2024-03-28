@@ -81,8 +81,9 @@
         {% endif %}
         <div class="form-container">
             <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
-                Show gif
-                <input type="checkbox" name="debug" id="debug" checked>
+                <span id="show-gif-box">Show gif
+                    <input type="checkbox" name="debug" id="debug" checked>
+                </span>
                 <br>
                 <div id="captcha-box">
                     {{ captcha(css_class="captcha") }}
@@ -116,6 +117,10 @@
                     loadingGif.style.display = "block";
                 }
 
+                var showGifBox = document.getElementById("show-gif-box");
+                if (showGifBox) {
+                    showGifBox.style.display = "none";
+                }
 
                 // Show the roll GIF if it exists
                 var rollGif = document.getElementById("roll-gif");
