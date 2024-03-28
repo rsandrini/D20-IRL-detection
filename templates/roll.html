@@ -83,6 +83,8 @@
             <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
                 Show gif
                 <input type="checkbox" name="debug" id="debug" checked>
+                <br>
+                {{ captcha(css_class="captcha") }}
                 <input type="submit" id="rollButton" value="Let's roll!">
             </form>
         </div>

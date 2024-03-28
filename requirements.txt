@@ -3,3 +3,7 @@ tflite-runtime
 flask
 
 pillow
+
+captcha
+Flask-Session
+flask-session-captcha

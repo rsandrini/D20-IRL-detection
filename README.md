@@ -107,7 +107,7 @@ By following the steps outlined in this project, you'll gain insights into the e
 
 - [ ] Create a more precise 3d model for the dice box
 - [ ] API authentication for external usage, as DaaS (Dice as a Service haha..ha..ha)
-- [ ] Captcha implementation for website usage
+- [X] Captcha implementation for website usage
 - [ ] Queue system for multiple requests
 - [ ] Improve the 3d model to store the raspberry pi and the servo motor
 - [ ] Fine tune the object detection model for better accuracy

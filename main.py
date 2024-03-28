@@ -3,6 +3,8 @@ import os
 import uuid
 import requests
 from flask import Flask, request, render_template, jsonify
+from flask_session import Session
+from flask_session_captcha import FlaskSessionCaptcha
 from object_detection import ObjectDetector
 from dice import *
 
@@ -15,6 +17,19 @@ MODEL_FOLDER = os.getenv("MODEL_FOLDER")
 RESULT_FOLDER = os.path.join("static", os.getenv("RESULT_FOLDER"))
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = uuid.uuid4().hex
+
+# captcha configs:
+app.config['CAPTCHA_ENABLE'] = True
+app.config['CAPTCHA_LENGTH'] = 5
+app.config['CAPTCHA_WIDTH'] = 200
+app.config['CAPTCHA_HEIGHT'] = 160
+
+app.config['SESSION_TYPE'] = 'redis' # or other type of drivers for session, see https://flask-session.readthedocs.io/en/latest/
+Session(app)
+captcha = FlaskSessionCaptcha(app)
+
+
 detector = ObjectDetector(MODEL_FOLDER)
 
 
@@ -23,7 +38,10 @@ def page_roll_dice():
     if request.method == 'GET':
         return render_template('roll.html')
 
-    #lets count the elapsed time for the roll
+    if not captcha.validate():
+        return "invalid captcha/answer"
+
+    #TODO: calling local api now, improve this !
     roll_response = requests.post('http://localhost:5000/api/roll', data=request.form)
 
     # Extract data from the response
