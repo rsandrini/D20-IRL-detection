@@ -100,26 +100,32 @@
                 errorMessageElement.style.display = "none"; // Adjust based on how errors are shown
             }
 
-            // Show the loading GIF, hide other elements if they exist
-            var loadingGif = document.getElementById("loading-gif");
-            if (loadingGif) {
-                loadingGif.style.display = "block";
-            }
+            // Delay the following actions by 1 second (1000 milliseconds)
+            setTimeout(function() {
+                // Hide the loading GIF
+                if (loadingGif) {
+                    loadingGif.style.display = "none";
+                }
 
-            var rollGif = document.getElementById("roll-gif");
-            if (rollGif) {
-                rollGif.style.display = "none";
-            }
+                // Show the roll GIF if it exists
+                var rollGif = document.getElementById("roll-gif");
+                if (rollGif) {
+                    rollGif.style.display = "block";
+                }
 
-            var infoContainer = document.getElementById("info-container");
-            if (infoContainer) {
-                infoContainer.style.display = "none";
-            }
+                // Hide other elements
+                var infoContainer = document.getElementById("info-container");
+                if (infoContainer) {
+                    infoContainer.style.display = "none";
+                }
 
-            var resultBox = document.getElementById("result-box");
-            if (resultBox) {
-                resultBox.style.display = "none";
-            }
+                var resultBox = document.getElementById("result-box");
+                if (resultBox) {
+                    resultBox.style.display = "none";
+                }
+
+            }, 1000); // Delay set to 1000 milliseconds (1 second)
+
 
             // Disable the button after form submission and change its text
             var rollButton = document.getElementById("rollButton");
