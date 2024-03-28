@@ -86,7 +86,7 @@
                 <br>
                 {{ captcha(css_class="captcha") }}
                 <input type="text" name="captcha"><br>
-                {{ error }}
+                <span id="error-message" style="color: red; display: none;">{{ error_message }}</span>
                 <input type="submit" id="rollButton" value="Let's roll!">
             </form>
         </div>
@@ -94,15 +94,39 @@
 
     <script>
         function disableButton() {
-            // Show the loading GIF
-            document.getElementById("loading-gif").style.display = "block";
-            document.getElementById("roll-gif").style.display = "none";
-            document.getElementById("info-container").style.display = "none";
-            document.getElementById("result-box").style.display = "none";
+            // Optionally, clear any error messages
+            var errorMessageElement = document.getElementById("error-message");
+            if (errorMessageElement) {
+                errorMessageElement.style.display = "none"; // Adjust based on how errors are shown
+            }
 
-            // Disable the button after form submission
-            document.getElementById("rollButton").disabled = true;
-            document.getElementById("rollButton").value = "Rolling...";
+            // Show the loading GIF, hide other elements if they exist
+            var loadingGif = document.getElementById("loading-gif");
+            if (loadingGif) {
+                loadingGif.style.display = "block";
+            }
+
+            var rollGif = document.getElementById("roll-gif");
+            if (rollGif) {
+                rollGif.style.display = "none";
+            }
+
+            var infoContainer = document.getElementById("info-container");
+            if (infoContainer) {
+                infoContainer.style.display = "none";
+            }
+
+            var resultBox = document.getElementById("result-box");
+            if (resultBox) {
+                resultBox.style.display = "none";
+            }
+
+            // Disable the button after form submission and change its text
+            var rollButton = document.getElementById("rollButton");
+            if (rollButton) {
+                rollButton.disabled = true;
+                rollButton.value = "Rolling...";
+            }
         }
     </script>
 </body>
