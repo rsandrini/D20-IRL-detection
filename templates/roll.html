@@ -84,8 +84,10 @@
                 Show gif
                 <input type="checkbox" name="debug" id="debug" checked>
                 <br>
-                {{ captcha(css_class="captcha") }}
-                <input type="text" name="captcha"><br>
+                <div id="captcha-box">
+                    {{ captcha(css_class="captcha") }}
+                    <input type="text" name="captcha"><br>
+                </div>
                 <span id="error-message" style="color: red; display: {% if error_message %}block{% else %}none{% endif %};">{{ error_message }}</span>
                 <input type="submit" id="rollButton" value="Let's roll!">
             </form>
@@ -98,6 +100,11 @@
             var errorMessageElement = document.getElementById("error-message");
             if (errorMessageElement) {
                 errorMessageElement.style.display = "none"; // Adjust based on how errors are shown
+            }
+
+            var captchaBox = document.getElementById("captcha-box");
+            if (captchaBox) {
+                captchaBox.style.display = "none";
             }
 
             var loadingGif = document.getElementById("loading-gif");
