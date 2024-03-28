@@ -39,11 +39,9 @@ detector = ObjectDetector(MODEL_FOLDER)
 
 @app.route('/', methods=['GET', 'POST'])
 def page_roll_dice():
-    if request.method == 'GET':
-        return render_template('roll.html')
 
-    if not captcha.validate():
-        return "invalid captcha/answer"
+    if request.method == 'GET' or request.method == 'GET' and not captcha.validate():
+        return render_template('roll.html', error="invalid captcha")
 
     #TODO: calling local api now, improve this !
     roll_response = requests.post('http://localhost:5000/api/roll', data=request.form)
