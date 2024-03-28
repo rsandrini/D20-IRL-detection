@@ -86,7 +86,7 @@
                 <br>
                 {{ captcha(css_class="captcha") }}
                 <input type="text" name="captcha"><br>
-                <span id="error-message" style="color: red; display: none;">{{ error_message }}</span>
+                <span id="error-message" style="color: red; display: {% if error_message %}block{% else %}none{% endif %};">{{ error_message }}</span>
                 <input type="submit" id="rollButton" value="Let's roll!">
             </form>
         </div>
