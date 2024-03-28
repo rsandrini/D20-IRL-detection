@@ -64,7 +64,7 @@
             {% if gif %}
                 <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
             {% endif %}
-                <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
+            <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
 
             <div id="result-box" style="display: block;">
                 <h1>{{ detection_text }}</h1>
@@ -113,9 +113,8 @@
             setTimeout(function() {
                 // Hide the loading GIF
                 if (loadingGif) {
-                    loadingGif.style.display = "block";
+                    loadingGif.style.display = "none";
                 }
-
 
                 // Show the roll GIF if it exists
                 var rollGif = document.getElementById("roll-gif");
