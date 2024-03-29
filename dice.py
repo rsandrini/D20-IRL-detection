@@ -30,7 +30,7 @@ async def hardware_activation():
             # Turn off the GPIO pin
             GPIO.output(pin, GPIO.LOW)
             print(f"GPIO {pin} is OFF")
-            time.sleep(0.2)
+            time.sleep(0.3)
     finally:
         GPIO.cleanup()  # Clean up GPIO settings
 
