@@ -19,7 +19,7 @@ async def hardware_activation():
     GPIO.setmode(GPIO.BCM)  # BCM is the Broadcom SOC channel designation for GPIO numbering
     GPIO.setup(pin, GPIO.OUT)  # Set pin as an output pin
     try:
-        for i in range(3):
+        for i in range(2):
             # Turn on the GPIO pin
             GPIO.output(pin, GPIO.HIGH)
             print(f"GPIO {pin} is ON")
@@ -36,7 +36,7 @@ async def hardware_activation():
 
 def process_frames(frames):
     image_list = []
-    for i, frame in enumerate(frames):
+    for i, frame in enumerate(frames[-25:]):
         # Convert frame to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         # Create BytesIO object to store image in memory
