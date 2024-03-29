@@ -67,8 +67,7 @@ def roll_dice(uuid, folder, debug=True):
     motion_frame_count = 0  # Count of frames with motion
     frames_since_last_motion = 0  # Count of frames since the last motion detection
     frames = []
-    loop = asyncio.get_event_loop()
-    loop.create_task(hardware_activation())
+    asyncio.create_task(hardware_activation())
 
     while True:
         ret, frame = cap.read()
