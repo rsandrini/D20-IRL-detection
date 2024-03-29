@@ -37,7 +37,12 @@ captcha = FlaskSessionCaptcha(app)
 detector = ObjectDetector(MODEL_FOLDER)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html')
+
+
+@app.route('/roll-dice', methods=['GET', 'POST'])
 def page_roll_dice():
     if (request.method == 'GET'):
         return render_template('roll.html')
