@@ -82,8 +82,7 @@
         <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
         {% if time_elapsed_detection %}
             <div class="info-container" id="info-container" style="display: block;">
-                <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
-                <p>Elapsed total processing time: {{ time_elapsed }}</p>
+                <p>Elapsed detection time: {{ time_elapsed_detection }} | Elapsed total processing time: {{ time_elapsed }}</p>
             </div>
         {% endif %}
         <div class="form-container">
@@ -93,10 +92,12 @@
                 </span>
                 <br>
                 <div id="captcha-box">
-                    {{ captcha(css_class="captcha") }}
-                    <input type="text" name="captcha" required><br>
+                    <p>{{ captcha(css_class="captcha") }}</p>
+                    <input type="text" name="captcha" required>
+                    <br>
                 </div>
                 <span id="error-message" style="color: red; display: {% if error_message %}block{% else %}none{% endif %};">{{ error_message }}</span>
+                <br>
                 <input type="submit" id="rollButton" value="Let's roll!">
             </form>
         </div>
@@ -121,6 +122,12 @@
                 showGifBox.style.display = "none";
             }
 
+            // Hide or adjust visibility of elements as needed
+                var resultContent = document.querySelector('.result-content');
+                if (resultContent) {
+                    resultContent.style.display = "none"; // Or "none" depending on your logic
+                }
+
             // Delay the hiding of elements by 1 second (1000 milliseconds)
             setTimeout(function() {
                 // Show the loading GIF
@@ -129,23 +136,13 @@
                     loadingGif.style.display = "block";
                 }
 
-                // Assuming 'roll-gif' and 'result-img' are within a flex container now
-                // You might want to control the visibility of the entire container
-                // rather than individual elements within it
-
-                // Hide or adjust visibility of elements as needed
-                var resultContent = document.querySelector('.result-content');
-                if (resultContent) {
-                    resultContent.style.display = "none"; // Or "none" depending on your logic
-                }
-
                 // Hide additional info
                 var infoContainer = document.getElementById("info-container");
                 if (infoContainer) {
                     infoContainer.style.display = "none";
                 }
 
-            }, 1000); // Delay set to 1000 milliseconds (1 second)
+            }, 600); // Delay set to
 
             // Disable the button after form submission and change its text
             var rollButton = document.getElementById("rollButton");
