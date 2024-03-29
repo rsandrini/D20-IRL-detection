@@ -25,9 +25,11 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-        .result-container {
-            text-align: center;
-            margin-top: 20px;
+        .result-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px; /* Adjust the gap between images as needed */
         }
 
         img {
@@ -61,18 +63,20 @@
     <div class="container">
         <h1>Roll Result</h1>
         <div class="result-container">
-            {% if gif %}
-                <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
-            {% endif %}
-            <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
-
-            <div id="result-box" style="display: block;">
-                <h1>{{ detection_text }}</h1>
-                <p>
-                    <img src="{{ result_image }}" id="result-img">
-                </p>
+            <div class="result-content"> <!-- New div to wrap images for side by side display -->
+                {% if gif %}
+                    <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
+                {% endif %}
+                <div id="result-box" style="display: block;">
+                    <h1>{{ detection_text }}</h1>
+                    <p>
+                        <img src="{{ result_image }}" id="result-img">
+                    </p>
+                </div>
             </div>
+
         </div>
+        <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
         {% if time_elapsed_detection %}
             <div class="info-container" id="info-container" style="display: block;">
                 <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
@@ -100,9 +104,10 @@
             // Optionally, clear any error messages
             var errorMessageElement = document.getElementById("error-message");
             if (errorMessageElement) {
-                errorMessageElement.style.display = "none"; // Adjust based on how errors are shown
+                errorMessageElement.style.display = "none";
             }
 
+            // Hide the captcha and debug options
             var captchaBox = document.getElementById("captcha-box");
             if (captchaBox) {
                 captchaBox.style.display = "none";
@@ -113,34 +118,37 @@
                 showGifBox.style.display = "none";
             }
 
+            // Show the loading GIF immediately
             var loadingGif = document.getElementById("loading-gif");
+            if (loadingGif) {
+                loadingGif.style.display = "block";
+            }
 
-            // Delay the following actions by 1 second (1000 milliseconds)
+            // Delay the hiding of elements by 1 second (1000 milliseconds)
             setTimeout(function() {
                 // Hide the loading GIF
                 if (loadingGif) {
-                    loadingGif.style.display = "block";
+                    loadingGif.style.display = "none";
                 }
 
-                // Show the roll GIF if it exists
-                var rollGif = document.getElementById("roll-gif");
-                if (rollGif) {
-                    rollGif.style.display = "none";
+                // Assuming 'roll-gif' and 'result-img' are within a flex container now
+                // You might want to control the visibility of the entire container
+                // rather than individual elements within it
+
+                // Hide or adjust visibility of elements as needed
+                // For example, you might want to show the result content here instead
+                var resultContent = document.querySelector('.result-content');
+                if (resultContent) {
+                    resultContent.style.display = "flex"; // Or "none" depending on your logic
                 }
 
-                // Hide other elements
+                // Hide additional info
                 var infoContainer = document.getElementById("info-container");
                 if (infoContainer) {
                     infoContainer.style.display = "none";
                 }
 
-                var resultBox = document.getElementById("result-box");
-                if (resultBox) {
-                    resultBox.style.display = "none";
-                }
-
             }, 1000); // Delay set to 1000 milliseconds (1 second)
-
 
             // Disable the button after form submission and change its text
             var rollButton = document.getElementById("rollButton");
@@ -149,6 +157,7 @@
                 rollButton.value = "Rolling...";
             }
         }
+
     </script>
 </body>
 </html>
