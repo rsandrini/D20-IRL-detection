@@ -42,6 +42,10 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/about', methods=['GET'])
+def index():
+    return render_template('about.html')
+
 @app.route('/roll-dice', methods=['GET', 'POST'])
 def page_roll_dice():
     if (request.method == 'GET'):

@@ -1,7 +1,7 @@
 body {
     font-family: 'Arial', sans-serif;
     background-color: #282c34; /* Updated color */
-    color: #ffffff; /* Text color for the new theme */
+    color: #3c2f2f; /* Text color for the new theme */
     margin: 0;
     padding: 0;
     display: flex;
@@ -13,7 +13,7 @@ body {
 }
 
 h1 {
-    color: #ffdd57; /* Updated color for consistency with the new theme */
+    color: #000; /* Updated color for consistency with the new theme */
 }
 
 h2 {
