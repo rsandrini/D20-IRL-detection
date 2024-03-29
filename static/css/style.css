@@ -70,7 +70,7 @@ p {
 }
 
 .highlight {
-    color: #61dafb;
+    color: #cc4141;
 }
 
 .navbar {
@@ -84,7 +84,7 @@ p {
     padding: 0;
     margin: 0;
     display: flex; /* Displays the list items in a row */
-    justify-content: center; /* Centers the list items horizontally */
+    justify-content: left; /* Centers the list items horizontally */
 }
 
 .navbar ul li {
