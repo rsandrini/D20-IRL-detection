@@ -8,15 +8,16 @@
 
 </head>
 <body>
-    <nav class="navbar">
-        <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/roll">Roll Dice</a></li>
-            <li><a href="/about">About</a></li>
-        </ul>
-    </nav>
+
 
     <div class="container">
+        <nav class="navbar">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/roll">Roll Dice</a></li>
+                <li><a href="/about">About</a></li>
+            </ul>
+        </nav>
         <h1>Roll dice IRL - DaaS</h1>
 
         <div class="result-container">
@@ -38,7 +39,7 @@
         {% endif %}
         <img src="static/gif/give-d20.gif" alt="loading GIF" id="loading-gif" style="display: none;">
         <div class="form-container">
-            <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
+            <form action="/roll" method="POST" id="rollForm" onsubmit="disableButton()">
                 <span id="show-gif-box">Show gif
                     <input type="checkbox" name="debug" id="debug" checked>
                 </span>

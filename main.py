@@ -46,7 +46,7 @@ def index():
 def about():
     return render_template('about.html')
 
-@app.route('/roll-dice', methods=['GET', 'POST'])
+@app.route('/roll', methods=['GET', 'POST'])
 def page_roll_dice():
     if (request.method == 'GET'):
         return render_template('roll.html')
@@ -55,7 +55,7 @@ def page_roll_dice():
         return render_template('roll.html', error_message="invalid captcha")
 
     #TODO: calling local api now, improve this !
-    roll_response = requests.post('http://localhost:5000/api/roll', data=request.form)
+    roll_response = requests.post('http://localhost:5000/api/v1/roll', data=request.form)
 
     # Extract data from the response
     try:
@@ -78,7 +78,7 @@ def page_roll_dice():
                            time_elapsed_detection=roll_data['time_elapsed_detection'])
 
 
-@app.route('/api/roll', methods=['POST'])
+@app.route('/api/v1/roll', methods=['POST'])
 def api_roll_dice():
     # capture form data
     debug = request.form.get('debug', False)
