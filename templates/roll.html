@@ -93,12 +93,6 @@
             <img src="static/gif/awaiting.gif" alt="loading GIF" id="awaiting-gif" style="display: block;">
         {% endif %}
         <img src="static/gif/give-d20.gif" alt="loading GIF" id="loading-gif" style="display: none;">
-
-        {% if time_elapsed_detection %}
-            <div class="info-container" id="info-container" style="display: block;">
-                <p>Elapsed detection time: {{ time_elapsed_detection }} | Elapsed total processing time: {{ time_elapsed }}</p>
-            </div>
-        {% endif %}
         <div class="form-container">
             <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
                 <span id="show-gif-box">Show gif
@@ -116,7 +110,11 @@
             </form>
         </div>
     </div>
-
+    {% if time_elapsed_detection %}
+        <div class="info-container" id="info-container" style="display: block;">
+            <p>Elapsed detection time: {{ time_elapsed_detection }} | Elapsed total processing time: {{ time_elapsed }}</p>
+        </div>
+    {% endif %}
     <script>
         function disableButton() {
             // Optionally, clear any error messages
