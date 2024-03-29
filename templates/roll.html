@@ -123,10 +123,17 @@
             }
 
             // Hide or adjust visibility of elements as needed
-                var resultContent = document.querySelector('.result-content');
-                if (resultContent) {
-                    resultContent.style.display = "none"; // Or "none" depending on your logic
-                }
+            var resultContent = document.querySelector('.result-content');
+            if (resultContent) {
+                resultContent.style.display = "none"; // Or "none" depending on your logic
+            }
+
+
+            // Hide additional info
+            var infoContainer = document.getElementById("info-container");
+            if (infoContainer) {
+                infoContainer.style.display = "none";
+            }
 
             // Delay the hiding of elements by 1 second (1000 milliseconds)
             setTimeout(function() {
@@ -135,13 +142,6 @@
                 if (loadingGif) {
                     loadingGif.style.display = "block";
                 }
-
-                // Hide additional info
-                var infoContainer = document.getElementById("info-container");
-                if (infoContainer) {
-                    infoContainer.style.display = "none";
-                }
-
             }, 600); // Delay set to
 
             // Disable the button after form submission and change its text
