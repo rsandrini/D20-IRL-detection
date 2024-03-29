@@ -64,14 +64,14 @@
 <body>
     <div class="container">
         <h1>Roll Result</h1>
-        <h2>{{ detection_text }}</h2>
+
         <div class="result-container">
+            <h2>{{ detection_text }}</h2>
             <div class="result-content"> <!-- New div to wrap images for side by side display -->
                 {% if gif %}
                     <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
                 {% endif %}
                 <div id="result-box" style="display: block;">
-
                     <p>
                         <img src="{{ result_image }}" id="result-img">
                     </p>
@@ -94,7 +94,7 @@
                 <br>
                 <div id="captcha-box">
                     {{ captcha(css_class="captcha") }}
-                    <input type="text" name="captcha"><br>
+                    <input type="text" name="captcha" required><br>
                 </div>
                 <span id="error-message" style="color: red; display: {% if error_message %}block{% else %}none{% endif %};">{{ error_message }}</span>
                 <input type="submit" id="rollButton" value="Let's roll!">
@@ -136,7 +136,7 @@
                 // Hide or adjust visibility of elements as needed
                 var resultContent = document.querySelector('.result-content');
                 if (resultContent) {
-                    resultContent.style.display = "flex"; // Or "none" depending on your logic
+                    resultContent.style.display = "none"; // Or "none" depending on your logic
                 }
 
                 // Hide additional info
