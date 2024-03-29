@@ -66,6 +66,7 @@ class ObjectDetector:
                 label_text = self.labels[int(classes[i])]
                 label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
                 label_ymin = max(label_size[1] + 10, ymin)  # Ensure label doesn't extend beyond top of the image
+                label_xmin = xmin
 
                 if label_ymin < label_size[1] + 10:
                     label_ymin = ymin + label_size[1] + 10  # Move label above the box if it extends beyond the top
@@ -74,7 +75,7 @@ class ObjectDetector:
                 # Check for collision with other labels
                 for other_label in all_labels:
                     other_label_rect = cv2.getTextSize(other_label[0], cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-                    label_xmin = xmin
+
                     if self.is_collision((xmin, label_ymin, label_size[0], label_size[1]), other_label_rect):
                         # Adjust current label to a clear position
                         label_ymin = max(other_label[1] + label_size[1] + 10, ymin + label_size[1] + 10)  # Ensure label doesn't overlap with other labels
