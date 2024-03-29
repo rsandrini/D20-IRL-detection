@@ -9,6 +9,7 @@ import time
 
 
 async def hardware_activation():
+    time.sleep(1)
     # Pin Definitions
     pin = 6  # GPIO 6
     roll_for = 0.6
@@ -25,7 +26,7 @@ async def hardware_activation():
             # Turn off the GPIO pin
             GPIO.output(pin, GPIO.LOW)
             print(f"GPIO {pin} is OFF")
-            time.sleep(0.3)
+            time.sleep(0.2)
     finally:
         GPIO.cleanup()  # Clean up GPIO settings
 
@@ -66,7 +67,8 @@ def roll_dice(uuid, folder, debug=True):
     motion_frame_count = 0  # Count of frames with motion
     frames_since_last_motion = 0  # Count of frames since the last motion detection
     frames = []
-    asyncio.run(hardware_activation())
+    loop = asyncio.get_event_loop()
+    loop.create_task(hardware_activation())
 
     while True:
         ret, frame = cap.read()
