@@ -57,18 +57,21 @@
         input[type="submit"]:hover {
             background-color: #0056b3;
         }
+
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Roll Result</h1>
+        <h2>{{ detection_text }}</h2>
         <div class="result-container">
             <div class="result-content"> <!-- New div to wrap images for side by side display -->
                 {% if gif %}
                     <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
                 {% endif %}
                 <div id="result-box" style="display: block;">
-                    <h1>{{ detection_text }}</h1>
+
                     <p>
                         <img src="{{ result_image }}" id="result-img">
                     </p>
@@ -118,17 +121,12 @@
                 showGifBox.style.display = "none";
             }
 
-            // Show the loading GIF immediately
-            var loadingGif = document.getElementById("loading-gif");
-            if (loadingGif) {
-                loadingGif.style.display = "block";
-            }
-
             // Delay the hiding of elements by 1 second (1000 milliseconds)
             setTimeout(function() {
-                // Hide the loading GIF
+                // Show the loading GIF
+                var loadingGif = document.getElementById("loading-gif");
                 if (loadingGif) {
-                    loadingGif.style.display = "none";
+                    loadingGif.style.display = "block";
                 }
 
                 // Assuming 'roll-gif' and 'result-img' are within a flex container now
@@ -136,7 +134,6 @@
                 // rather than individual elements within it
 
                 // Hide or adjust visibility of elements as needed
-                // For example, you might want to show the result content here instead
                 var resultContent = document.querySelector('.result-content');
                 if (resultContent) {
                     resultContent.style.display = "flex"; // Or "none" depending on your logic
@@ -154,6 +151,7 @@
             var rollButton = document.getElementById("rollButton");
             if (rollButton) {
                 rollButton.disabled = true;
+                rollButton.style.cursor = "not-allowed";
                 rollButton.value = "Rolling...";
             }
         }
