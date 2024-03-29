@@ -69,6 +69,7 @@ class ObjectDetector:
 
                 if label_ymin < label_size[1] + 10:
                     label_ymin = ymin + label_size[1] + 10  # Move label above the box if it extends beyond the top
+                    xmin = xmin - 10
 
                 # Check for collision with other labels
                 for other_label in all_labels:

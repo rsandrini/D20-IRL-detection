@@ -32,6 +32,10 @@ h2 {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+.info-container {
+    font-size: 0.8rem;
+}
+
 .result-content {
     display: flex;
     justify-content: center;
