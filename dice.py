@@ -1,3 +1,4 @@
+import asyncio
 import concurrent.futures
 from io import BytesIO
 from PIL import Image
@@ -7,7 +8,7 @@ import RPi.GPIO as GPIO
 import time
 
 
-def hardware_activation():
+async def hardware_activation():
     # Pin Definitions
     pin = 6  # GPIO 6
     roll_for = 0.6
@@ -15,7 +16,7 @@ def hardware_activation():
     GPIO.setmode(GPIO.BCM)  # BCM is the Broadcom SOC channel designation for GPIO numbering
     GPIO.setup(pin, GPIO.OUT)  # Set pin as an output pin
     try:
-        for i in range(10):
+        for i in range(3):
             # Turn on the GPIO pin
             GPIO.output(pin, GPIO.HIGH)
             print(f"GPIO {pin} is ON")
@@ -24,14 +25,14 @@ def hardware_activation():
             # Turn off the GPIO pin
             GPIO.output(pin, GPIO.LOW)
             print(f"GPIO {pin} is OFF")
-            time.sleep(roll_for)
+            time.sleep(0.3)
     finally:
         GPIO.cleanup()  # Clean up GPIO settings
 
 
 def process_frames(frames):
     image_list = []
-    for i, frame in enumerate(frames[-1000:]):
+    for i, frame in enumerate(frames):
         # Convert frame to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         # Create BytesIO object to store image in memory
@@ -65,7 +66,7 @@ def roll_dice(uuid, folder, debug=True):
     motion_frame_count = 0  # Count of frames with motion
     frames_since_last_motion = 0  # Count of frames since the last motion detection
     frames = []
-    hardware_activation()
+    asyncio.run(hardware_activation())
 
     while True:
         ret, frame = cap.read()
