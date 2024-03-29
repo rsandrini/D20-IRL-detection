@@ -1,5 +1,5 @@
 import asyncio
-import concurrent.futures
+import threading
 from io import BytesIO
 from PIL import Image
 import cv2
@@ -7,6 +7,9 @@ import numpy as np
 import RPi.GPIO as GPIO
 import time
 
+def start_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
 
 async def hardware_activation():
     time.sleep(1)
@@ -67,7 +70,13 @@ def roll_dice(uuid, folder, debug=True):
     motion_frame_count = 0  # Count of frames with motion
     frames_since_last_motion = 0  # Count of frames since the last motion detection
     frames = []
-    asyncio.create_task(hardware_activation())
+
+    new_loop = asyncio.new_event_loop()
+    t = threading.Thread(target=start_loop, args=(new_loop,))
+    t.start()
+
+    # Schedule the coroutine on the new event loop
+    asyncio.run_coroutine_threadsafe(hardware_activation(), new_loop)
 
     while True:
         ret, frame = cap.read()
