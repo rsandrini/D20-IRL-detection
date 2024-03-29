@@ -72,3 +72,35 @@ p {
 .highlight {
     color: #61dafb;
 }
+
+.navbar {
+    width: 100%;
+    background-color: #333; /* Dark background for the navbar */
+    overflow: hidden; /* Ensures the content fits within the navbar */
+}
+
+.navbar ul {
+    list-style-type: none; /* Removes bullet points from the list */
+    padding: 0;
+    margin: 0;
+    display: flex; /* Displays the list items in a row */
+    justify-content: center; /* Centers the list items horizontally */
+}
+
+.navbar ul li {
+    float: left;
+}
+
+.navbar ul li a {
+    display: block;
+    color: white; /* Text color for the links */
+    text-align: center;
+    padding: 14px 20px; /* Spacing around the links */
+    text-decoration: none; /* Removes underline from links */
+}
+
+/* Changes the background color of links on hover */
+.navbar ul li a:hover {
+    background-color: #ddd;
+    color: black; /* Text color change for better contrast */
+}
