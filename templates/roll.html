@@ -89,6 +89,7 @@
             </div>
 
         </div>
+        <img src="static/gif/awaiting.gif" alt="loading GIF" id="awaiting-gif" style="display: block;">
         <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
         {% if time_elapsed_detection %}
             <div class="info-container" id="info-container" style="display: block;">
@@ -156,6 +157,12 @@
                 if (loadingGif) {
                     loadingGif.style.display = "block";
                 }
+
+                var awaitingGif = document.getElementById("awaiting-gif");
+                if (awaitingGif) {
+                    awaitingGif.style.display = "none";
+                }
+
             }, 600); // Delay set to
 
             // Disable the button after form submission and change its text
