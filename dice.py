@@ -10,7 +10,7 @@ import time
 def hardware_activation():
     # Pin Definitions
     pin = 6  # GPIO 6
-    roll_for = 0.3
+    roll_for = 0.6
 
     GPIO.setmode(GPIO.BCM)  # BCM is the Broadcom SOC channel designation for GPIO numbering
     GPIO.setup(pin, GPIO.OUT)  # Set pin as an output pin
@@ -24,6 +24,7 @@ def hardware_activation():
             # Turn off the GPIO pin
             GPIO.output(pin, GPIO.LOW)
             print(f"GPIO {pin} is OFF")
+            time.sleep(roll_for)
     finally:
         GPIO.cleanup()  # Clean up GPIO settings
 
@@ -66,39 +67,38 @@ def roll_dice(uuid, folder, debug=True):
     frames = []
     hardware_activation()
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        while True:
-            ret, frame = cap.read()
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            result = np.abs(np.mean(gray) - last_mean)
-            last_mean = np.mean(gray)
+    while True:
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        result = np.abs(np.mean(gray) - last_mean)
+        last_mean = np.mean(gray)
 
-            if frames_recorded % frame_skip == 0:
-                frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frames.append(frame)
+        if frames_recorded % frame_skip == 0:
+            frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frames.append(frame)
 
-            frames_recorded += 1
-            frames_since_last_motion += 1
+        frames_recorded += 1
+        frames_since_last_motion += 1
 
-            if result > 0.1:
-                motion_frame_count += 1
-                frames_since_last_motion = 0  # Reset the counter for frames since the last motion detection
-            else:
-                motion_frame_count = 0
+        if result > 0.1:
+            motion_frame_count += 1
+            frames_since_last_motion = 0  # Reset the counter for frames since the last motion detection
+        else:
+            motion_frame_count = 0
 
-            # Stop recording when motion stops for at least 10 frames,
-            # and continue recording if frames are still being detected since the last motion
-            if motion_frame_count == 0 and frames_since_last_motion >= 10:
-                print(f"Motion stopped with {len(frames)} frames detected.")
+        # Stop recording when motion stops for at least 10 frames,
+        # and continue recording if frames are still being detected since the last motion
+        if motion_frame_count == 0 and frames_since_last_motion >= 10:
+            print(f"Motion stopped with {len(frames)} frames detected.")
 
-                cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(frames[-1], cv2.COLOR_RGB2BGR))
-                if debug:
-                    start = time.time()
-                    # Create GIF from images
-                    generate_gif_from_images(process_frames(frames), f'{folder}/{uuid}.gif')
-                    print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
-                break
+            cv2.imwrite(f'{folder}/{uuid}.jpg', cv2.cvtColor(frames[-1], cv2.COLOR_RGB2BGR))
+            if debug:
+                start = time.time()
+                # Create GIF from images
+                generate_gif_from_images(process_frames(frames), f'{folder}/{uuid}.gif')
+                print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
+            break
 
     print("Finishing...")
     cap.release()
