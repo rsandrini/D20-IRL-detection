@@ -3,7 +3,6 @@ from io import BytesIO
 from PIL import Image
 import cv2
 import numpy as np
-import os
 import RPi.GPIO as GPIO
 import time
 
@@ -30,7 +29,7 @@ def hardware_activation():
 
 def process_frames(frames):
     image_list = []
-    for i, frame in enumerate(frames[-25:]):
+    for i, frame in enumerate(frames[-30:]):
         # Convert frame to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         # Create BytesIO object to store image in memory
@@ -50,14 +49,13 @@ def generate_gif_from_images(image_list, gif_name):
         gif_name,
         save_all=True,
         append_images=processed_images[1:],
-        duration=10,  # in milliseconds
-        loop=1
+        loop=2
     )
 
     print(f"GIF saved at: {gif_name}")
 
 
-def roll_dice(uuid, folder, debug):
+def roll_dice(uuid, folder, debug=True):
     cap = cv2.VideoCapture(0)
     last_mean = 0
     frames_recorded = 0  # Count of frames recorded for GIF

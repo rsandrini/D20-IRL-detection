@@ -16,6 +16,13 @@
             color: #333;
         }
 
+        h2 {
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .container {
             max-width: 800px;
             margin: 20px auto;
@@ -57,6 +64,8 @@
         input[type="submit"]:hover {
             background-color: #0056b3;
         }
+
+
 
 
     </style>
@@ -128,6 +137,11 @@
                 resultContent.style.display = "none"; // Or "none" depending on your logic
             }
 
+            # get h2
+            var h2 = document.querySelector('h2');
+            if (h2) {
+                h2.style.display = "none"; // Or "none" depending on your logic
+            }
 
             // Hide additional info
             var infoContainer = document.getElementById("info-container");
