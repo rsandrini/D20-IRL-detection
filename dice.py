@@ -12,7 +12,6 @@ def start_loop(loop):
     loop.run_forever()
 
 async def hardware_activation():
-    time.sleep(1)
     # Pin Definitions
     pin = 6  # GPIO 6
     roll_for = 0.2
