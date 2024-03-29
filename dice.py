@@ -15,7 +15,7 @@ async def hardware_activation():
     time.sleep(1)
     # Pin Definitions
     pin = 6  # GPIO 6
-    roll_for = 0.1
+    roll_for = 0.2
 
     GPIO.setmode(GPIO.BCM)  # BCM is the Broadcom SOC channel designation for GPIO numbering
     GPIO.setup(pin, GPIO.OUT)  # Set pin as an output pin
@@ -24,6 +24,7 @@ async def hardware_activation():
             # Turn on the GPIO pin
             GPIO.output(pin, GPIO.HIGH)
             print(f"GPIO {pin} is ON")
+            time.sleep(roll_for)
             roll_for += 0.1
 
             # Turn off the GPIO pin
