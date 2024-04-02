@@ -76,11 +76,11 @@ class ObjectDetector:
 
                 # RIGHT SIDE TOP
                 if label_xmin < imW / 4 and label_ymin < imH / 4:
-                    label_xmin = xmax + 30
+                    label_xmin = xmax
 
                 # LEFT SIDE TOP
                 elif label_xmin > (imW / 4) * 3 and label_ymin > (imH / 4) * 3:
-                    label_xmin = xmin - 30
+                    label_xmin = xmin + 30
 
                 # if label_ymin < label_size[1] + 10:
                 #     label_ymin = ymin + label_size[1]#  # Move label above the box if it extends beyond the top
