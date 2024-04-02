@@ -74,10 +74,11 @@ class ObjectDetector:
                 label_ymin = max(label_size[1], ymin)  # Ensure label doesn't extend beyond top of the image
                 label_xmin = xmin
 
-                # Check if the text is top of the image in the left corner
+                # RIGHT SIDE TOP
                 if label_xmin < imW / 4 and label_ymin < imH / 4:
-                    label_xmin = xmax
+                    label_xmin = xmax + 30
 
+                # LEFT SIDE TOP
                 elif label_xmin > (imW / 4) * 3 and label_ymin > (imH / 4) * 3:
                     label_xmin = xmin - 30
 
