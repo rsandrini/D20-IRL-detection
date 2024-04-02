@@ -167,8 +167,8 @@ class ObjectDetector:
             for x in range(0, boundary_w - new_w + 1, step):
                 new_rect = (x, y, new_w, new_h)
                 collision_found = False
-                for rect, _ in rectangles:
-                    if self.is_collision(new_rect, rect):
+                for rect_start, rect_end, _ in rectangles:
+                    if self.is_collision(new_rect, (rect_start, rect_end)):
                         collision_found = True
                         break
                 if not collision_found:
