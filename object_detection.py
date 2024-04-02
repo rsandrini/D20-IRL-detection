@@ -55,7 +55,7 @@ class ObjectDetector:
         scores = self.interpreter.get_tensor(self.output_details[scores_idx]['index'])[0]
 
         detections = []
-        all_labels = []
+        all_boxes = []
 
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0 and len(detections) <= 1):
@@ -86,14 +86,15 @@ class ObjectDetector:
                     label_ymin = ymin + label_size[1] + 10 # Move label above the box if it extends beyond the top
 
                 # Check for collision with other labels
-                for other_label in all_labels:
+                for other_label in all_boxes:
                     current_label_rect = [label_xmin, label_ymin - label_size[1] - 10, label_xmin + label_size[0], label_ymin + 5]
 
                     if self.is_collision(other_label, current_label_rect):
                         print("Collision detected, adjusting label position")
-                        # Adjust current label to a clear position
-                        label_ymin = max(other_label[1] + label_size[1] + 10, ymin + label_size[1] + 10)  # Ensure label doesn't overlap with other labels
-                        label_xmin = xmin - 10
+                        self.find_clear_position([xmin + 10, ymin + 10],
+                                                 all_boxes,
+                                                 current_label_rect)
+
 
                 cv2.rectangle(image,
                               (xmin, ymin),
@@ -113,11 +114,11 @@ class ObjectDetector:
 
                 print(f"Text on: ({label_xmin}, {label_ymin})")
 
-                all_labels.append([label_xmin,
-                                   label_ymin - label_size[1] - 10,
-                                   label_xmin + label_size[0],
-                                   label_ymin + 5]
-                                  )  # Store label and its y-coordinate
+                all_boxes.append([label_xmin,
+                                  label_ymin - label_size[1] - 10,
+                                  label_xmin + label_size[0],
+                                  label_ymin + 5]
+                                )  # Store label and its y-coordinate
 
         # Save image in a new file
         cv2.imwrite(image_path_new_file, image)
@@ -137,5 +138,29 @@ class ObjectDetector:
             return True
         return False
 
+
+    def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
+        """
+        Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles.
+
+        :param rectangles: A list of existing rectangles in the format (x, y, w, h).
+        :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
+        :param step: The step size to move in the search area. Default is 1.
+        :return: A tuple (x, y) representing the top-left corner of the first clear position found, or None if no clear position is found.
+        """
+        boundary_w, boundary_h = boundary
+        new_w, new_h = new_rect_size
+
+        for y in range(0, boundary_h - new_h + 1, step):
+            for x in range(0, boundary_w - new_w + 1, step):
+                new_rect = (x, y, new_w, new_h)
+                collision_found = False
+                for rect in rectangles:
+                    if self.is_collision(new_rect, rect):
+                        collision_found = True
+                        break
+                if not collision_found:
+                    return (x, y)
+        return None
 
 
