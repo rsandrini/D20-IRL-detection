@@ -87,9 +87,9 @@ class ObjectDetector:
 
                 # Check for collision with other labels
                 for other_label in all_labels:
-                    other_label_rect = cv2.getTextSize(other_label[0], cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                    current_label_rect = [label_xmin, label_ymin - label_size[1] - 10, label_xmin + label_size[0], label_ymin + 5]
 
-                    if self.is_collision((xmin, ymin, label_size[0], label_size[1]), other_label_rect):
+                    if self.is_collision(other_label, current_label_rect):
                         print("Collision detected, adjusting label position")
                         # Adjust current label to a clear position
                         label_ymin = max(other_label[1] + label_size[1] + 10, ymin + label_size[1] + 10)  # Ensure label doesn't overlap with other labels
@@ -113,7 +113,11 @@ class ObjectDetector:
 
                 print(f"Text on: ({label_xmin}, {label_ymin})")
 
-                all_labels.append((label_text, label_ymin))  # Store label and its y-coordinate
+                all_labels.append([label_xmin,
+                                   label_ymin - label_size[1] - 10,
+                                   label_xmin + label_size[0],
+                                   label_ymin + 5]
+                                  )  # Store label and its y-coordinate
 
         # Save image in a new file
         cv2.imwrite(image_path_new_file, image)
