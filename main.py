@@ -78,6 +78,33 @@ def page_roll_dice():
                            time_elapsed_detection=roll_data['time_elapsed_detection'])
 
 
+# Create a route to only detect without roll
+@app.route('/detect', methods=['POST'])
+def api_detect_dice():
+    # capture form data
+    start_time = time.time()
+    # generate a new UUID for the request
+    request_uuid = request.form.get('detection_hash')
+
+    start_time_detection = time.time()
+    detection = detector.detect_objects(f"{RESULT_FOLDER}", f"{request_uuid}.jpg")
+    try:
+        if len(detection) == 1:
+            detection = f"{detection[0][0]}"
+        else:
+            detection = f"{detection[0][0]} and {detection[1][0]}"
+    except :
+        detection = "No dice detected :("
+    time_elapsed_detection = round(time.time() - start_time_detection, 2)
+    time_elapsed = round(time.time() - start_time, 2)
+    return jsonify({"detections":  detection,
+                    "image": f"{RESULT_FOLDER}/{request_uuid}.jpg",
+                    "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
+                    "time_elapsed": time_elapsed,
+                    "time_elapsed_detection": time_elapsed_detection
+                    }
+    )
+
 @app.route('/api/v1/roll', methods=['POST'])
 def api_roll_dice():
     # capture form data
@@ -101,6 +128,7 @@ def api_roll_dice():
     time_elapsed_detection = round(time.time() - start_time_detection, 2)
     time_elapsed = round(time.time() - start_time, 2)
     return jsonify({"detections":  detection,
+                    "detection_hash": {request_uuid},
                     "image": f"{RESULT_FOLDER}/{request_uuid}.jpg",
                     "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
                     "time_elapsed": time_elapsed,

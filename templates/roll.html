@@ -53,6 +53,10 @@
                 <br>
                 <input type="submit" id="rollButton" value="Let's roll!">
             </form>
+            <form action="/detect" method="POST" id="rolldetectForm">
+                <input type="hidden" name="detection_hash" value="{{ detection_hash }}">
+                <input type="submit" id="redetectButton" value="Re-detect!">
+            </form>
         </div>
 
         {% if time_elapsed_detection %}
