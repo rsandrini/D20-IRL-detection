@@ -63,6 +63,8 @@ class ObjectDetector:
                 ymax = int(min(imH, (boxes[i][2] * imH)))
                 xmax = int(min(imW, (boxes[i][3] * imW)))
 
+                print(f"Object {i}: {self.labels[int(classes[i])]} ({xmin}, {ymin}) ({xmax}, {ymax})")
+
                 label_text = self.labels[int(classes[i])]
                 label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
                 label_ymin = max(label_size[1] + 10, ymin)  # Ensure label doesn't extend beyond top of the image
@@ -70,7 +72,6 @@ class ObjectDetector:
 
                 if label_ymin < label_size[1] + 10:
                     label_ymin = ymin + label_size[1] + 10  # Move label above the box if it extends beyond the top
-
 
                 # Check for collision with other labels
                 for other_label in all_labels:
@@ -86,6 +87,8 @@ class ObjectDetector:
                 cv2.rectangle(image, (xmin, label_ymin - label_size[1] - 10),
                               (xmin + label_size[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
                 cv2.putText(image, label_text, (label_xmin, label_ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+
+                print(f"Text on: ({label_xmin}, {label_ymin})")
 
                 all_labels.append((label_text, label_ymin))  # Store label and its y-coordinate
 
