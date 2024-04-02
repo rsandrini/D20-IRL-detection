@@ -75,9 +75,9 @@ class ObjectDetector:
 
                 # Check if the text is top of the image in the left corner
                 if label_xmin < imH / 4 and label_ymin < imW / 4:
-                    label_xmin = xmax + 10
+                    label_xmin = xmax + 25
                 elif label_xmin > imH / 4 and label_ymin < imW / 4:
-                    label_xmin = xmin - 10
+                    label_xmin = xmin - 25
 
                 # if label_ymin < label_size[1] + 10:
                 #     label_ymin = ymin + label_size[1]#  # Move label above the box if it extends beyond the top
@@ -92,10 +92,21 @@ class ObjectDetector:
                 #         label_xmin = xmin - 10
 
 
-                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
-                cv2.rectangle(image, (xmin, label_ymin - label_size[1] - 10),
-                              (xmin + label_size[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
-                cv2.putText(image, label_text, (label_xmin, label_ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+                cv2.rectangle(image,
+                              (xmin, ymin),
+                              (xmax, ymax),
+                              (10, 255, 0),
+                              2)
+                cv2.rectangle(image,
+                              (label_xmin, label_ymin - label_size[1] - 10),
+                              (label_xmin + label_size[0], label_ymin + 5),
+                              (255, 255, 255),
+                              cv2.FILLED)
+                cv2.putText(image,
+                            label_text,
+                            (label_xmin, label_ymin),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.7, (0, 0, 0), 2)
 
                 print(f"Text on: ({label_xmin}, {label_ymin})")
 
