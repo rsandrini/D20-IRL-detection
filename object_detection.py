@@ -91,10 +91,10 @@ class ObjectDetector:
                               (10, 255, 0),
                               2)
 
-                all_boxes.append(([label_xmin,
-                                  label_ymin - label_size[1] - 10,
-                                  label_xmin + label_size[0],
-                                  label_ymin + 5],
+                all_boxes.append(((label_xmin,
+                                  label_ymin - label_size[1] - 10),
+                                  (label_xmin + label_size[0],
+                                  label_ymin + 5),
                                  [label_text, (label_size[0], label_size[1])])
                                 )  # Store label and its y-coordinate
 
@@ -109,19 +109,21 @@ class ObjectDetector:
                     new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
                                                             all_boxes,
                                                             box_label[1])
-                    white_box[0] = new_x
-                    white_box[1] = new_y
+                    white_box = (new_x, new_y - box_label[1][1] - 10), \
+                                (new_x + box_label[1][0], new_y + 5)
 
+            # cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
+            print(f"Drawing white box on: ({white_box[0][0]}, {white_box[0][1]})")
             cv2.rectangle(image,
-                          (white_box[0]),
+                          white_box[0],
                           (255, 255, 255),
                           cv2.FILLED)
+
+            print(f"Text on: ({white_box[1][0]}, {white_box[1][1]})")
             cv2.putText(image,
                         white_box[1],
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.7, (0, 0, 0), 2)
-
-            print(f"Text on: ({white_box[1][0]}, {white_box[1][1]})")
 
         # Save image in a new file
         cv2.imwrite(image_path_new_file, image)
