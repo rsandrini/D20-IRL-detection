@@ -72,6 +72,7 @@ def page_roll_dice():
 
     return render_template('roll.html',
                            gif=roll_data['gif'],
+                           detection_hash=roll_data['detection_hash'],
                            result_image=roll_data['image'],
                            detection_text=roll_data['detections'],
                            time_elapsed=roll_data['time_elapsed'],
