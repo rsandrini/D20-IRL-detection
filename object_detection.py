@@ -29,6 +29,7 @@ class ObjectDetector:
         image = cv2.imread(image_path_file)
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         imH, imW, _ = image.shape
+        print(f"Image dimensions: {imW}x{imH}")
         image_resized = cv2.resize(image_rgb, (self.width, self.height))
         input_data = np.expand_dims(image_resized, axis=0)
 
@@ -53,11 +54,6 @@ class ObjectDetector:
 
         detections = []
         all_labels = []
-
-        cv2.putText(image, "0,0", (0, 0), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-        cv2.putText(image, f"0,{imH}", (0, imH), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-        cv2.putText(image, f"{imW},{imH}", (imW, imH), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-        cv2.putText(image, f"{imW},0", (imW, 0), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
 
 
         for i in range(len(scores)):
