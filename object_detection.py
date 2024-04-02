@@ -113,15 +113,11 @@ class ObjectDetector:
                     white_box[1] = new_y
 
             cv2.rectangle(image,
-                          (white_box[0][0],
-                           white_box[0][1],
-                           white_box[0][2],
-                           white_box[0][3]),
+                          (white_box[0]),
                           (255, 255, 255),
                           cv2.FILLED)
             cv2.putText(image,
-                        white_box[1][0],
-                        white_box[1][1],
+                        white_box[1],
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.7, (0, 0, 0), 2)
 
