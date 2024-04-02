@@ -85,40 +85,47 @@ class ObjectDetector:
                 if label_ymin < label_size[1] + 10:
                     label_ymin = ymin + label_size[1] + 10 # Move label above the box if it extends beyond the top
 
-                # Check for collision with other labels
-                for other_label in all_boxes:
-                    current_label_rect = [label_xmin, label_ymin - label_size[1] - 10, label_xmin + label_size[0], label_ymin + 5]
-
-                    if self.is_collision(other_label, current_label_rect):
-                        print("Collision detected, adjusting label position")
-                        self.find_clear_position([xmin + 10, ymin + 10],
-                                                 all_boxes,
-                                                 [label_size[0], label_size[1]])
-
-
                 cv2.rectangle(image,
                               (xmin, ymin),
                               (xmax, ymax),
                               (10, 255, 0),
                               2)
-                cv2.rectangle(image,
-                              (label_xmin, label_ymin - label_size[1] - 10),
-                              (label_xmin + label_size[0], label_ymin + 5),
-                              (255, 255, 255),
-                              cv2.FILLED)
-                cv2.putText(image,
-                            label_text,
-                            (label_xmin, label_ymin),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.7, (0, 0, 0), 2)
 
-                print(f"Text on: ({label_xmin}, {label_ymin})")
-
-                all_boxes.append([label_xmin,
+                all_boxes.append(([label_xmin,
                                   label_ymin - label_size[1] - 10,
                                   label_xmin + label_size[0],
-                                  label_ymin + 5]
+                                  label_ymin + 5],
+                                 [label_text, (label_size[0], label_size[1])])
                                 )  # Store label and its y-coordinate
+
+        for i, box_data in enumerate(all_boxes):
+            white_box, box_label = box_data
+            # Detect collision and draw a white rectangle with text of result
+            # Check for collision with other labels
+            # Considering that there are only two detections, we can check for collision with the other label
+            if len(all_boxes) == 2:  # If only one die was detected, we can skip this step
+                if self.is_collision(white_box, all_boxes[1][0] if i == 0 else all_boxes[0][0]):
+                    print("Collision detected, adjusting label position")
+                    new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
+                                                            all_boxes,
+                                                            box_label[1])
+                    white_box[0] = new_x
+                    white_box[1] = new_y
+
+            cv2.rectangle(image,
+                          (white_box[0][0],
+                           white_box[0][1],
+                           white_box[0][2],
+                           white_box[0][3]),
+                          (255, 255, 255),
+                          cv2.FILLED)
+            cv2.putText(image,
+                        white_box[1][0],
+                        white_box[1][1],
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.7, (0, 0, 0), 2)
+
+            print(f"Text on: ({white_box[1][0]}, {white_box[1][1]})")
 
         # Save image in a new file
         cv2.imwrite(image_path_new_file, image)
@@ -142,6 +149,7 @@ class ObjectDetector:
         """
         Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles.
 
+        :param boundary: A tuple containing the width and height of the search area (w, h).
         :param rectangles: A list of existing rectangles in the format (x, y, w, h).
         :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
         :param step: The step size to move in the search area. Default is 1.
@@ -154,7 +162,7 @@ class ObjectDetector:
             for x in range(0, boundary_w - new_w + 1, step):
                 new_rect = (x, y, new_w, new_h)
                 collision_found = False
-                for rect in rectangles:
+                for rect, _ in rectangles:
                     if self.is_collision(new_rect, rect):
                         collision_found = True
                         break
