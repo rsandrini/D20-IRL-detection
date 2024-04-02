@@ -113,7 +113,7 @@ class ObjectDetector:
                                 (new_x + box_label[1][0], new_y + 5)
 
             # cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
-            print(f"Drawing white box on: ({white_box[0][0]}, {white_box[0][1]})")
+            print(f"Drawing white box on: ({white_box[0]}, {white_box[0]})")
             cv2.rectangle(image,
                           white_box[0],
                           (255, 255, 255),
