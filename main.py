@@ -88,7 +88,7 @@ def api_detect_dice():
     request_uuid = request.form.get('detection_hash')
 
     start_time_detection = time.time()
-    detection = detector.detect_objects(f"{RESULT_FOLDER}", f"{request_uuid}.jpg")
+    detection, image_detected = detector.detect_objects(f"{RESULT_FOLDER}", f"{request_uuid}.jpg")
     try:
         if len(detection) == 1:
             detection = f"{detection[0][0]}"
@@ -102,7 +102,7 @@ def api_detect_dice():
     return render_template('roll.html',
                            gif=f"{RESULT_FOLDER}/{request_uuid}.gif",
                            detection_hash=request_uuid,
-                           result_image=f"{RESULT_FOLDER}/{request_uuid}.jpg",
+                           result_image=f"{image_detected}",
                            detection_text=detection,
                            time_elapsed=time_elapsed,
                            time_elapsed_detection=time_elapsed_detection)
@@ -120,7 +120,7 @@ def api_roll_dice():
     roll_dice(request_uuid, RESULT_FOLDER, debug)
 
     start_time_detection = time.time()
-    detection = detector.detect_objects(f"{RESULT_FOLDER}", f"{request_uuid}.jpg")
+    detection, image_detected = detector.detect_objects(f"{RESULT_FOLDER}", f"{request_uuid}.jpg")
     try:
         if len(detection) == 1:
             detection = f"{detection[0][0]}"
@@ -132,7 +132,7 @@ def api_roll_dice():
     time_elapsed = round(time.time() - start_time, 2)
     return jsonify({"detections":  detection,
                     "detection_hash": request_uuid,
-                    "image": f"{RESULT_FOLDER}/{request_uuid}.jpg",
+                    "image": f"{image_detected}",
                     "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
                     "time_elapsed": time_elapsed,
                     "time_elapsed_detection": time_elapsed_detection

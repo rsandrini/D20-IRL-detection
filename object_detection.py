@@ -26,6 +26,8 @@ class ObjectDetector:
 
     def detect_objects(self, image_path, image_name):
         image_path_file = os.path.join(image_path, image_name)
+        # new file name for the result
+        image_path_new_file = os.path.join(image_path, f"{image_name.split('.')[0]}_result.jpg")
         image = cv2.imread(image_path_file)
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         imH, imW, _ = image.shape
@@ -54,7 +56,6 @@ class ObjectDetector:
 
         detections = []
         all_labels = []
-
 
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0 and len(detections) <= 1):
@@ -113,10 +114,10 @@ class ObjectDetector:
 
                 all_labels.append((label_text, label_ymin))  # Store label and its y-coordinate
 
-        # Save image
-        cv2.imwrite(image_path_file, image)
+        # Save image in a new file
+        cv2.imwrite(image_path_new_file, image)
 
-        return detections
+        return detections, image_path_new_file
 
     def is_collision(self, rect1, rect2):
         # Check for collision between two rectangles
