@@ -93,7 +93,7 @@ class ObjectDetector:
                         print("Collision detected, adjusting label position")
                         self.find_clear_position([xmin + 10, ymin + 10],
                                                  all_boxes,
-                                                 current_label_rect)
+                                                 [label_size[0], label_size[1]])
 
 
                 cv2.rectangle(image,
@@ -137,7 +137,6 @@ class ObjectDetector:
                 y1 < y2 + h2 and y1 + h1 > y2):
             return True
         return False
-
 
     def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
         """
