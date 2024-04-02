@@ -76,10 +76,10 @@ class ObjectDetector:
 
                 # Check if the text is top of the image in the left corner
                 if label_xmin < imW / 4 and label_ymin < imH / 4:
-                    label_xmin = xmax + 25
+                    label_xmin = xmax
 
                 elif label_xmin > (imW / 4) * 3 and label_ymin > (imH / 4) * 3:
-                    label_xmin = xmin - 25
+                    label_xmin = xmin
 
                 # if label_ymin < label_size[1] + 10:
                 #     label_ymin = ymin + label_size[1]#  # Move label above the box if it extends beyond the top
