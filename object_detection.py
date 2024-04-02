@@ -104,7 +104,8 @@ class ObjectDetector:
             # Check for collision with other labels
             # Considering that there are only two detections, we can check for collision with the other label
             if len(all_boxes) == 2:  # If only one die was detected, we can skip this step
-                if self.is_collision((white_box_start, white_box_end), all_boxes[1][0] if i == 0 else all_boxes[0][0]):
+                if self.is_collision((white_box_start, white_box_end),
+                                     (all_boxes[1][0], all_boxes[1][1]) if i == 0 else (all_boxes[0][0], all_boxes[0][1])):
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
                                                             all_boxes,
