@@ -98,14 +98,15 @@ def api_detect_dice():
         detection = "No dice detected :("
     time_elapsed_detection = round(time.time() - start_time_detection, 2)
     time_elapsed = round(time.time() - start_time, 2)
-    return jsonify({"detections":  detection,
-                    "detection_hash": request_uuid,
-                    "image": f"{RESULT_FOLDER}/{request_uuid}.jpg",
-                    "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
-                    "time_elapsed": time_elapsed,
-                    "time_elapsed_detection": time_elapsed_detection
-                    }
-    )
+
+    return render_template('roll.html',
+                           gif=f"{RESULT_FOLDER}/{request_uuid}.gif",
+                           detection_hash=request_uuid,
+                           result_image=f"{RESULT_FOLDER}/{request_uuid}.jpg",
+                           detection_text=detection,
+                           time_elapsed=time_elapsed,
+                           time_elapsed_detection=time_elapsed_detection)
+
 
 @app.route('/api/v1/roll', methods=['POST'])
 def api_roll_dice():
