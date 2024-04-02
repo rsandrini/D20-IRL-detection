@@ -111,17 +111,20 @@ class ObjectDetector:
                                                             box_label[1])
                     white_box = (new_x, new_y - box_label[1][1] - 10), \
                                 (new_x + box_label[1][0], new_y + 5)
+                    all_boxes[i] = (white_box[0], white_box[1], box_label)
+
 
             # cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
-            print(f"Drawing white box on: ({white_box[0]}, {white_box[0]})")
+            print(f"Drawing white box on: {white_box_start} - {white_box_end}")
             cv2.rectangle(image,
-                          white_box[0],
+                          (white_box_start),
+                          (white_box_end),
                           (255, 255, 255),
                           cv2.FILLED)
 
-            print(f"Text on: ({white_box[1][0]}, {white_box[1][1]})")
+            print(f"Text on: ({box_label[1][0]}, {box_label[1][1]})")
             cv2.putText(image,
-                        white_box[1],
+                        box_label[1],
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.7, (0, 0, 0), 2)
 
