@@ -95,7 +95,7 @@ class ObjectDetector:
                                   label_ymin - label_size[1] - 10),
                                   (label_xmin + label_size[0],
                                   label_ymin + 5),
-                                 [label_text, (label_size[0], label_size[1])])
+                                 [label_text, (label_size[0], label_ymin)])
                                 )  # Store label and its y-coordinate
 
         for i, box_data in enumerate(all_boxes):
@@ -123,8 +123,10 @@ class ObjectDetector:
                           cv2.FILLED)
 
             print(f"Text on: ({box_label[1][0]}, {box_label[1][1]})")
+            # cv2.putText(image, label_text, (xmin, label_ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
             cv2.putText(image,
-                        box_label[1],
+                        box_label[0],
+                        (box_label[1]),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.7, (0, 0, 0), 2)
 
