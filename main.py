@@ -98,6 +98,7 @@ def api_detect_dice():
     time_elapsed_detection = round(time.time() - start_time_detection, 2)
     time_elapsed = round(time.time() - start_time, 2)
     return jsonify({"detections":  detection,
+                    "detection_hash": request_uuid,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.jpg",
                     "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
                     "time_elapsed": time_elapsed,
@@ -128,7 +129,7 @@ def api_roll_dice():
     time_elapsed_detection = round(time.time() - start_time_detection, 2)
     time_elapsed = round(time.time() - start_time, 2)
     return jsonify({"detections":  detection,
-                    "detection_hash": {request_uuid},
+                    "detection_hash": request_uuid,
                     "image": f"{RESULT_FOLDER}/{request_uuid}.jpg",
                     "gif": f"{RESULT_FOLDER}/{request_uuid}.gif",
                     "time_elapsed": time_elapsed,
