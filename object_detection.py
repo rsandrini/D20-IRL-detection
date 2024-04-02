@@ -100,10 +100,12 @@ class ObjectDetector:
 
         for i, box_data in enumerate(all_boxes):
             white_box_start, white_box_end, box_label = box_data
+            print(all_boxes[0])
             # Detect collision and draw a white rectangle with text of result
             # Check for collision with other labels
             # Considering that there are only two detections, we can check for collision with the other label
             if len(all_boxes) == 2:  # If only one die was detected, we can skip this step
+                print(f"Checking for collision with other labels")
                 if self.is_collision((white_box_start, white_box_end),
                                      (all_boxes[1][0], all_boxes[1][1]) if i == 0 else (all_boxes[0][0], all_boxes[0][1])):
                     print("Collision detected, adjusting label position")
