@@ -79,7 +79,7 @@ class ObjectDetector:
                     label_xmin = xmin - 30
 
                 # LEFT SIDE TOP
-                elif label_xmin > imW / 2 and label_ymin > (imH / 4):
+                elif label_xmin > imW / 2 and label_ymin < (imH / 4):
                     label_xmin = xmax + 30
 
                 # if label_ymin < label_size[1] + 10:
