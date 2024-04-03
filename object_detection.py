@@ -179,6 +179,9 @@ class ObjectDetector:
             for x in range(0, boundary_w - new_w + 1, step):
                 new_rect = (x, y, new_w, new_h)
                 collision_found = False
+                from pprint import pprint
+                pprint(rectangles)
+                print()
                 for (rect_start, rect_end), _, (detect_start, detect_end) in rectangles:
                     if self.is_collision(new_rect, [(rect_start, rect_end), (detect_start, detect_end)]):
                         collision_found = True
