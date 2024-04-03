@@ -4,37 +4,6 @@ import numpy as np
 from tflite_runtime.interpreter import Interpreter
 
 
-class BoxDetection:
-    def __init__(self, detection_x, detection_y, detection_width, detection_height,
-                 label_x, label_y, label_width, label_height,
-                 label_text, label_text_x, label_text_y):
-        self.detection_x = detection_x
-        self.detection_y = detection_y
-        self.detection_width = detection_width
-        self.detection_height = detection_height
-
-        self.label_x = label_x
-        self.label_y = label_y
-        self.label_width = label_width
-        self.label_height = label_height
-
-        self.label_text = label_text
-        self.label_text_x = label_text_x
-        self.label_text_y = label_text_y
-
-    def detection_box(self):
-        return (self.detection_x, self.detection_y), (self.detection_width, self.detection_height)
-
-    def label_box(self):
-        return (self.label_x, self.label_y), (self.label_width, self.label_height)
-
-    def label_box_width_height(self):
-        return (self.label_width, self.label_height)
-
-    def label_text_position(self):
-        return (self.label_text_x, self.label_text_y)
-
-
 class ObjectDetector:
     def __init__(self, model_dir):
         self.model_dir = model_dir
@@ -86,7 +55,6 @@ class ObjectDetector:
         scores = self.interpreter.get_tensor(self.output_details[scores_idx]['index'])[0]
 
         detections = []
-        boxes_data = []
 
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0 and len(detections) <= 1):
@@ -122,150 +90,21 @@ class ObjectDetector:
                               (10, 255, 0),
                               2)
 
-                # (label_xmin,
-                #  label_ymin - label_size[1] - 10),
-                # (label_xmin + label_size[0],
-                #  label_ymin + 5),
+                cv2.rectangle(image,
+                              (label_xmin, label_ymin - label_size[1] - 10),
+                              (label_xmin + label_size[0], label_ymin + 5),
+                              (255, 255, 255),
+                              cv2.FILLED)
 
-                box = BoxDetection(xmin, ymin, xmax, ymax,
-                                   label_xmin, label_ymin - label_size[1] - 10, label_xmin + label_size[0], label_ymin + 5,
-                                   label_text, label_xmin, label_ymin)
-
-                boxes_data.append(box)  # Store label and its y-coordinate
-
-        # # create a list with all boxes from boxes_date getting  box.detection_box(), box.label_box()
-        # all_boxes = [[box.detection_box(), box.label_box()] for box in boxes_data]
-        # # keep it with one list
-        # all_boxes = [item for sublist in all_boxes for item in sublist]
-        #
-        # print(all_boxes)
-        # print()
-
-        for i, box_data in enumerate(boxes_data):
-            # white_box_start, white_box_end, box_label, detection_box_start, detection_box_end = box_data
-            print(f"Checking {box_data.label_box()} collision")
-
-            if len(boxes_data) == 2:  # If only one die was detected, we can skip this step
-                boxes_without_current = [boxes_data[1].detection_box(), boxes_data[1].label_box()] if i == 0 else [boxes_data[0].detection_box(), boxes_data[0].label_box()]
-                # Get the two boxes inside the opoosite object
-                if self.is_collision(box_data.label_box(), boxes_without_current):
-                    print("Collision detected, adjusting label position")
-                    new_x, new_y = self.find_clear_position_spiral(box_data.label_text_position(),
-                                                                   boxes_without_current,
-                                                                   box_data.label_box_width_height())
-
-                    # Adjust the text inside the white box
-                    label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-
-                    box_data.label_x = new_x
-                    box_data.label_y = new_y
-                    box_data.label_width = new_x + label_size[0]
-                    box_data.label_height = new_y + label_size[1]
-
-            print(f"Drawing white box on: {box_data.label_x} - {box_data.label_y}")
-            # cv2.rectangle(image, (xmin, label_ymin - label_size[1] - 10),
-            #               (xmin + label_size[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
-
-            cv2.rectangle(image,
-                          (box_data.label_x, box_data.label_y),
-                          (box_data.label_width, box_data.label_height),
-                          (255, 255, 255),
-                          cv2.FILLED)
-
-            print(f"Text on: ({box_data.label_text_x}, {box_data.label_text_y})")
-
-            cv2.putText(image,
-                        box_data.label_text,
-                        (box_data.label_text_x, box_data.label_text_y),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7, (0, 0, 0), 2)
+                cv2.putText(image,
+                            label_text,
+                            (label_xmin, label_ymin),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.7, (0, 0, 0), 2)
 
         # Save image in a new file
         cv2.imwrite(image_path_new_file, image)
 
         return detections, image_path_new_file
 
-    def is_collision(self, rect1, rectangles):
-        print(f"Checking collision for {rect1} against {rectangles}")
-        (x1, y1), (w1, h1) = rect1
-        for (x, y), (w, h) in rectangles:
-            if (x1 < x + w and x1 + w1 > x and
-                    y1 < y + h and y1 + h1 > y):
-                return True
-        return False
-
-    # def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
-    #     """
-    #     Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles.
-    #
-    #     :param boundary: A tuple containing the width and height of the search area (w, h).
-    #     :param rectangles: A list of existing rectangles in the format (x, y, w, h).
-    #     :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
-    #     :param step: The step size to move in the search area. Default is 1.
-    #     :return: A tuple (x, y) representing the top-left corner of the first clear position found, or None if no clear position is found.
-    #     """
-    #     (boundary_w, boundary_h) = boundary
-    #     (new_w, new_h) = new_rect_size
-    #
-    #     # Assuming you want to start from the center
-    #     start_x = (boundary_w - new_w) // 2
-    #     start_y = (boundary_h - new_h) // 2
-    #
-    #     for offset in range(0, max(boundary_w, boundary_h), step):
-    #         for y in range(max(0, start_y - offset), min(boundary_h - new_h + 1, start_y + offset + 1), step):
-    #             for x in range(max(0, start_x - offset), min(boundary_w - new_w + 1, start_x + offset + 1), step):
-    #                 new_rect = ((x + start_x, y + start_y), (new_w, new_h))
-    #                 collision_found = False
-    #                 for ((x1, y1), (w1, h1)) in rectangles:
-    #                     if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
-    #                         collision_found = True
-    #                         break
-    #                 if not collision_found:
-    #                     return (x, y)
-    #     return None
-
-    def find_clear_position_spiral(self, original_pos, rectangles, new_rect_size, step=1):
-        """
-        Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles,
-        starting from an original position and moving in a spiral pattern outward.
-
-        :param original_pos: The original position (x, y) around which to search for a new position.
-        :param rectangles: A list of existing rectangles in the format (x, y, w, h).
-        :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
-        :param step: The step size to move in the search area. Default is 1.
-        :return: A tuple (x, y) representing the top-left corner of the first clear position found, or None if no clear position is found.
-        """
-        (orig_x, orig_y) = original_pos
-        (new_w, new_h) = new_rect_size
-        direction = [(0, -step), (step, 0), (0, step), (-step, 0)]  # Up, Right, Down, Left
-        max_distance = max(new_w, new_h) * 2  # Arbitrary limit to prevent infinite loop
-        distance = 0
-        turn = 0
-        moves_since_last_turn = 0
-        total_moves = 0
-
-        while distance < max_distance:
-            if total_moves % 2 == 0:  # Increase the spiral distance after a full cycle (up-right-down-left)
-                distance += step
-            dx, dy = direction[turn % 4]
-            for _ in range(distance):
-                orig_x += dx
-                orig_y += dy
-                new_rect = ((orig_x, orig_y), (new_w, new_h))
-                collision_found = False
-                for ((x1, y1), (w1, h1)) in rectangles:
-                    if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
-                        collision_found = True
-                        break
-                if not collision_found:
-                    return (orig_x, orig_y)
-
-                moves_since_last_turn += 1
-                if moves_since_last_turn == distance:  # Time to turn
-                    turn += 1
-                    moves_since_last_turn = 0
-                    total_moves += 1
-                    break  # Break to adjust the spiral distance if needed
-
-        return None
 
