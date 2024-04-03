@@ -194,8 +194,8 @@ class ObjectDetector:
         :param step: The step size to move in the search area. Default is 1.
         :return: A tuple (x, y) representing the top-left corner of the first clear position found, or None if no clear position is found.
         """
-        boundary_w, boundary_h = boundary
-        new_w, new_h = new_rect_size
+        (boundary_w, boundary_h) = boundary
+        (new_w, new_h) = new_rect_size
 
         for y in range(0, boundary_h - new_h + 1, step):
             for x in range(0, boundary_w - new_w + 1, step):
