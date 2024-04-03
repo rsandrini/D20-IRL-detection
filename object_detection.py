@@ -143,7 +143,7 @@ class ObjectDetector:
                                      [boxes_data[1].detection_box(), boxes_data[1].label_box()] if i == 0
                                      else [boxes_data[0].detection_box(), boxes_data[0].label_box()]):
                     print("Collision detected, adjusting label position")
-                    new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
+                    new_x, new_y = self.find_clear_position((imH + 10, imW + 10),
                                                             all_boxes,
                                                             box_data.label_box_width_height())
 
@@ -206,8 +206,8 @@ class ObjectDetector:
                 # from pprint import pprint
                 # pprint(rectangles)
                 # print()
-                for start, end in rectangles:
-                    if self.is_collision(new_rect, [(start), (end)]):
+                for (start_end, width_height) in rectangles:
+                    if self.is_collision(new_rect, [(start_end), (width_height)]):
                         collision_found = True
                         break
                 if not collision_found:
