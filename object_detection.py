@@ -117,8 +117,8 @@ class ObjectDetector:
             if len(all_boxes) == 2:  # If only one die was detected, we can skip this step
                 print(f"Checking for collision with white box and other boxes")
                 if self.is_collision((white_box_start, white_box_end),
-                                     (all_boxes[1][0], all_boxes[1][1]), (all_boxes[1][3], all_boxes[1][4]) if i == 0
-                                     else (all_boxes[0][0], all_boxes[0][1]), (all_boxes[0][3], all_boxes[0][4])):
+                                     [(all_boxes[1][0], all_boxes[1][1]), (all_boxes[1][3], all_boxes[1][4])] if i == 0
+                                     else [(all_boxes[0][0], all_boxes[0][1]), (all_boxes[0][3], all_boxes[0][4])]):
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
                                                             all_boxes,
@@ -151,19 +151,13 @@ class ObjectDetector:
 
         return detections, image_path_new_file
 
-    def is_collision(self, rect1, rect2, rect3):
-        # Check for collision between two rectangles
-        print(f"Checking for collision between {rect1} and {rect2} and {rect3}")
+    def is_collision(self, rect1, rects):
 
         (x1, y1), (w1, h1) = rect1
-        (x2, y2), (w2, h2) = rect2
-        (x3, y3), (w3, h3) = rect3
-
-        if (x1 < x2 + w2 and x1 + w1 > x2 and
-                y1 < y2 + h2 and y1 + h1 > y2) or \
-            (x1 < x3 + w3 and x1 + w1 > x3 and
-                y1 < y3 + h3 and y1 + h1 > y3):
-            return True
+        for x, y, w, h in rects:
+            if (x1 < x + w and x1 + w1 > x and
+                    y1 < y + h and y1 + h1 > y):
+                return True
         return False
 
     def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
@@ -184,7 +178,7 @@ class ObjectDetector:
                 new_rect = (x, y, new_w, new_h)
                 collision_found = False
                 for rect_start, rect_end, _, detect_start, detect_end in rectangles:
-                    if self.is_collision(new_rect, (rect_start, rect_end), (detect_start, detect_end)):
+                    if self.is_collision(new_rect, [(rect_start, rect_end), (detect_start, detect_end)]):
                         collision_found = True
                         break
                 if not collision_found:
