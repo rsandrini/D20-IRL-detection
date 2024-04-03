@@ -11,10 +11,12 @@ class BoxDetection:
         self.detection_y = detection_y
         self.detection_width = detection_width
         self.detection_height = detection_height
+
         self.label_x = label_x
         self.label_y = label_y
         self.label_width = label_width
         self.label_height = label_height
+
         self.label_text = label_text
         self.label_text_x = label_text_x
         self.label_text_y = label_text_y
@@ -83,7 +85,7 @@ class ObjectDetector:
         scores = self.interpreter.get_tensor(self.output_details[scores_idx]['index'])[0]
 
         detections = []
-        all_boxes = []
+        boxes_data = []
 
         for i in range(len(scores)):
             if (scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0 and len(detections) <= 1):
@@ -121,45 +123,46 @@ class ObjectDetector:
 
                 box = BoxDetection(xmin, ymin, xmax, ymax, label_xmin, label_ymin, label_xmin + label_size[0], label_ymin + 5, label_text, label_xmin, label_ymin)
 
-                all_boxes.append(box)  # Store label and its y-coordinate
+                boxes_data.append(box)  # Store label and its y-coordinate
 
-        for i, box_data in enumerate(all_boxes):
+
+        all_boxes = [[box.detection_box(), box.label_box()]for box in boxes_data]
+        for i, box_data in enumerate(boxes_data):
             # white_box_start, white_box_end, box_label, detection_box_start, detection_box_end = box_data
             print(f"Checking {box_data.label_box()} collision")
 
-            if len(all_boxes) == 2:  # If only one die was detected, we can skip this step
+            if len(boxes_data) == 2:  # If only one die was detected, we can skip this step
                 # Get the two boxes inside the opoosite object
                 if self.is_collision(box_data.label_box(),
-                                     [all_boxes[1].detection_box(), all_boxes[1].label_box()] if i == 0
-                                     else [all_boxes[0].detection_box(), all_boxes[0].label_box()]):
+                                     [boxes_data[1].detection_box(), boxes_data[1].label_box()] if i == 0
+                                     else [boxes_data[0].detection_box(), boxes_data[0].label_box()]):
                     print("Collision detected, adjusting label position")
-                    # new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
-                    #                                         all_boxes,
-                    #                                         box_data.label_box_width_height())
-                    #
-                    # # Adjust the text inside the white box
-                    # white_box = (new_x, new_y - box_label[1][1] - 10), \
-                    #             (new_x + box_label[1][0], new_y + 5)
-                    # # Update the box with the new position
-                    # all_boxes[i] = (white_box[0], white_box[1], box_label)
+                    new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
+                                                            all_boxes,
+                                                            box_data.label_box_width_height())
 
+                    # Adjust the text inside the white box
+                    label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
 
+                    box_data.label_x = new_x
+                    box_data.label_y = new_y
+                    box_data.label_width = new_x + label_size[0]
+                    box_data.label_height = new_y + label_size[1]
 
-            # cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
-            # print(f"Drawing white box on: {white_box_start} - {white_box_end}")
-            # cv2.rectangle(image,
-            #               (white_box_start),
-            #               (white_box_end),
-            #               (255, 255, 255),
-            #               cv2.FILLED)
-            #
-            # print(f"Text on: ({box_label[1][0]}, {box_label[1][1]})")
-            # # cv2.putText(image, label_text, (xmin, label_ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-            # cv2.putText(image,
-            #             box_label[0],
-            #             (box_label[1]),
-            #             cv2.FONT_HERSHEY_SIMPLEX,
-            #             0.7, (0, 0, 0), 2)
+            print(f"Drawing white box on: {box_data.label_x()} - {box_data.label_y()}")
+            cv2.rectangle(image,
+                          (box_data.label_x, box_data.label_y),
+                          (box_data.label_width, box_data.label_height),
+                          (255, 255, 255),
+                          cv2.FILLED)
+
+            print(f"Text on: ({self.box_data.label_text_x}, {self.box_data.label_text_y})")
+
+            cv2.putText(image,
+                        self.box_data.label_text,
+                        (self.box_data.label_text_x, self.box_data.label_text_y),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.7, (0, 0, 0), 2)
 
         # Save image in a new file
         cv2.imwrite(image_path_new_file, image)
@@ -192,9 +195,9 @@ class ObjectDetector:
             for x in range(0, boundary_w - new_w + 1, step):
                 new_rect = ((x, y), (new_w, new_h))
                 collision_found = False
-                from pprint import pprint
-                pprint(rectangles)
-                print()
+                # from pprint import pprint
+                # pprint(rectangles)
+                # print()
                 for rect_start, rect_end, _, detect_start, detect_end in rectangles:
                     if self.is_collision(new_rect, [(rect_start, rect_end), (detect_start, detect_end)]):
                         collision_found = True
