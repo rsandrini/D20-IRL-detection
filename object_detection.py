@@ -177,7 +177,7 @@ class ObjectDetector:
 
         for y in range(0, boundary_h - new_h + 1, step):
             for x in range(0, boundary_w - new_w + 1, step):
-                new_rect = (x, y, new_w, new_h)
+                new_rect = ((x, y), (new_w, new_h))
                 collision_found = False
                 from pprint import pprint
                 pprint(rectangles)
