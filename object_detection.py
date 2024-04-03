@@ -125,24 +125,24 @@ class ObjectDetector:
 
                 boxes_data.append(box)  # Store label and its y-coordinate
 
-        # create a list with all boxes from boxes_date getting  box.detection_box(), box.label_box()
-        all_boxes = [[box.detection_box(), box.label_box()] for box in boxes_data]
-        # keep it with one list
-        all_boxes = [item for sublist in all_boxes for item in sublist]
-
-        print(all_boxes)
-        print()
+        # # create a list with all boxes from boxes_date getting  box.detection_box(), box.label_box()
+        # all_boxes = [[box.detection_box(), box.label_box()] for box in boxes_data]
+        # # keep it with one list
+        # all_boxes = [item for sublist in all_boxes for item in sublist]
+        #
+        # print(all_boxes)
+        # print()
 
         for i, box_data in enumerate(boxes_data):
             # white_box_start, white_box_end, box_label, detection_box_start, detection_box_end = box_data
             print(f"Checking {box_data.label_box()} collision")
-
+            boxes_without_current = [(boxes_data[1].detection_box(), boxes_data[1].label_box())] if i == 0 else [(boxes_data[0].detection_box(), boxes_data[0].label_box())]
             if len(boxes_data) == 2:  # If only one die was detected, we can skip this step
                 # Get the two boxes inside the opoosite object
-                if self.is_collision(box_data.label_box(), all_boxes):
+                if self.is_collision(box_data.label_box(), boxes_without_current):
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position((imH + 10, imW + 10),
-                                                            [(boxes_data[1].detection_box(), boxes_data[1].label_box())] if i == 0 else [(boxes_data[0].detection_box(), boxes_data[0].label_box())],
+                                                            boxes_without_current,
                                                             box_data.label_box_width_height())
 
                     # Adjust the text inside the white box
