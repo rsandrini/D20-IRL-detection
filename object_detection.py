@@ -98,6 +98,9 @@ class ObjectDetector:
                                  [label_text, (label_xmin, label_ymin)])
                                 )  # Store label and its y-coordinate
 
+        print(all_boxes)
+        print()
+
         for i, box_data in enumerate(all_boxes):
             print(box_data)
             print()
