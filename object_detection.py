@@ -117,8 +117,8 @@ class ObjectDetector:
             if len(all_boxes) == 2:  # If only one die was detected, we can skip this step
                 print(f"Checking for collision with white box and other boxes")
                 if self.is_collision((white_box_start, white_box_end),
-                                     [(all_boxes[1][0], all_boxes[1][1]), (all_boxes[1][3], all_boxes[1][4])] if i == 0
-                                     else [(all_boxes[0][0], all_boxes[0][1]), (all_boxes[0][3], all_boxes[0][4])]):
+                                     (all_boxes[1][0], all_boxes[1][1]), (all_boxes[1][3], all_boxes[1][4]) if i == 0
+                                     else (all_boxes[0][0], all_boxes[0][1]), (all_boxes[0][3], all_boxes[0][4])):
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
                                                             all_boxes,
