@@ -19,17 +19,17 @@ class BoxDetection:
         self.label_text_x = label_text_x
         self.label_text_y = label_text_y
 
-        def detection_box(self):
-            return (self.detection_x, self.detection_y), (self.detection_width, self.detection_height)
+    def detection_box(self):
+        return (self.detection_x, self.detection_y), (self.detection_width, self.detection_height)
 
-        def label_box(self):
-            return (self.label_x, self.label_y), (self.label_width, self.label_height)
+    def label_box(self):
+        return (self.label_x, self.label_y), (self.label_width, self.label_height)
 
-        def label_box_width_height(self):
-            return (self.label_width, self.label_height)
+    def label_box_width_height(self):
+        return (self.label_width, self.label_height)
 
-        def label_text_position(self):
-            return (self.label_text_x, self.label_text_y)
+    def label_text_position(self):
+        return (self.label_text_x, self.label_text_y)
 
 
 class ObjectDetector:
