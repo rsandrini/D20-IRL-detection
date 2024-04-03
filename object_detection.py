@@ -150,10 +150,9 @@ class ObjectDetector:
                 # Get the two boxes inside the opoosite object
                 if self.is_collision(box_data.label_box(), boxes_without_current):
                     print("Collision detected, adjusting label position")
-                    new_x, new_y = self.find_clear_position((box_data.label_width + 40, box_data.label_height + 40),
-                                                            boxes_without_current,
-                                                            box_data.label_box_width_height(),
-                                                            step=5)
+                    new_x, new_y = self.find_clear_position_spiral(box_data.label_box(),
+                                                                   boxes_without_current,
+                                                                   box_data.label_box_width_height())
 
                     # Adjust the text inside the white box
                     label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
@@ -195,33 +194,78 @@ class ObjectDetector:
                 return True
         return False
 
-    def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
-        """
-        Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles.
+    # def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
+    #     """
+    #     Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles.
+    #
+    #     :param boundary: A tuple containing the width and height of the search area (w, h).
+    #     :param rectangles: A list of existing rectangles in the format (x, y, w, h).
+    #     :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
+    #     :param step: The step size to move in the search area. Default is 1.
+    #     :return: A tuple (x, y) representing the top-left corner of the first clear position found, or None if no clear position is found.
+    #     """
+    #     (boundary_w, boundary_h) = boundary
+    #     (new_w, new_h) = new_rect_size
+    #
+    #     # Assuming you want to start from the center
+    #     start_x = (boundary_w - new_w) // 2
+    #     start_y = (boundary_h - new_h) // 2
+    #
+    #     for offset in range(0, max(boundary_w, boundary_h), step):
+    #         for y in range(max(0, start_y - offset), min(boundary_h - new_h + 1, start_y + offset + 1), step):
+    #             for x in range(max(0, start_x - offset), min(boundary_w - new_w + 1, start_x + offset + 1), step):
+    #                 new_rect = ((x + start_x, y + start_y), (new_w, new_h))
+    #                 collision_found = False
+    #                 for ((x1, y1), (w1, h1)) in rectangles:
+    #                     if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
+    #                         collision_found = True
+    #                         break
+    #                 if not collision_found:
+    #                     return (x, y)
+    #     return None
 
-        :param boundary: A tuple containing the width and height of the search area (w, h).
+    def find_clear_position_spiral(self, original_pos, rectangles, new_rect_size, step=1):
+        """
+        Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles,
+        starting from an original position and moving in a spiral pattern outward.
+
+        :param original_pos: The original position (x, y) around which to search for a new position.
         :param rectangles: A list of existing rectangles in the format (x, y, w, h).
         :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
         :param step: The step size to move in the search area. Default is 1.
         :return: A tuple (x, y) representing the top-left corner of the first clear position found, or None if no clear position is found.
         """
-        (boundary_w, boundary_h) = boundary
+        (orig_x, orig_y) = original_pos
         (new_w, new_h) = new_rect_size
+        direction = [(0, -step), (step, 0), (0, step), (-step, 0)]  # Up, Right, Down, Left
+        max_distance = max(new_w, new_h) * 2  # Arbitrary limit to prevent infinite loop
+        distance = 0
+        turn = 0
+        moves_since_last_turn = 0
+        total_moves = 0
 
-        # Assuming you want to start from the center
-        start_x = (boundary_w - new_w) // 2
-        start_y = (boundary_h - new_h) // 2
+        while distance < max_distance:
+            if total_moves % 2 == 0:  # Increase the spiral distance after a full cycle (up-right-down-left)
+                distance += step
+            dx, dy = direction[turn % 4]
+            for _ in range(distance):
+                orig_x += dx
+                orig_y += dy
+                new_rect = ((orig_x, orig_y), (new_w, new_h))
+                collision_found = False
+                for ((x1, y1), (w1, h1)) in rectangles:
+                    if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
+                        collision_found = True
+                        break
+                if not collision_found:
+                    return (orig_x, orig_y)
 
-        for offset in range(0, max(boundary_w, boundary_h), step):
-            for y in range(max(0, start_y - offset), min(boundary_h - new_h + 1, start_y + offset + 1), step):
-                for x in range(max(0, start_x - offset), min(boundary_w - new_w + 1, start_x + offset + 1), step):
-                    new_rect = ((x, y), (new_w, new_h))
-                    collision_found = False
-                    for ((x1, y1), (w1, h1)) in rectangles:
-                        if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
-                            collision_found = True
-                            break
-                    if not collision_found:
-                        return (x, y)
+                moves_since_last_turn += 1
+                if moves_since_last_turn == distance:  # Time to turn
+                    turn += 1
+                    moves_since_last_turn = 0
+                    total_moves += 1
+                    break  # Break to adjust the spiral distance if needed
+
         return None
 
