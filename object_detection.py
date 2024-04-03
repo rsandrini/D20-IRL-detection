@@ -125,8 +125,11 @@ class ObjectDetector:
 
                 boxes_data.append(box)  # Store label and its y-coordinate
 
+        # create a list with all boxes from boxes_date getting  box.detection_box(), box.label_box()
+        all_boxes = [[box.detection_box(), box.label_box()] for box in boxes_data]
+        # keep it with one list
+        all_boxes = [item for sublist in all_boxes for item in sublist]
 
-        all_boxes = [box.detection_box(), box.label_box() for box in boxes_data]
         print(all_boxes)
         print()
 
