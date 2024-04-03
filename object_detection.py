@@ -105,16 +105,16 @@ class ObjectDetector:
                 label_ymin = max(label_size[1], ymin)  # Ensure label doesn't extend beyond top of the image
                 label_xmin = xmin
 
-                # # RIGHT SIDE TOP
-                # if label_xmin < imW / 2 and label_ymin < imH / 3:
-                #     label_xmin = xmin - 15
-                #
-                # # LEFT SIDE TOP
-                # elif label_xmin > imW / 2 and label_ymin < (imH / 3):
-                #     label_xmin = xmax
-                #
-                # if label_ymin < label_size[1] + 10:
-                #     label_ymin = ymin + label_size[1] + 10 # Move label above the box if it extends beyond the top
+                # RIGHT SIDE TOP
+                if label_xmin < imW / 2 and label_ymin < imH / 3:
+                    label_xmin = xmin - 15
+
+                # LEFT SIDE TOP
+                elif label_xmin > imW / 2 and label_ymin < (imH / 3):
+                    label_xmin = xmax
+
+                if label_ymin < label_size[1] + 10:
+                    label_ymin = ymin + label_size[1] + 10 # Move label above the box if it extends beyond the top
 
                 cv2.rectangle(image,
                               (xmin, ymin),
