@@ -149,7 +149,7 @@ class ObjectDetector:
                     box_data.label_width = new_x + label_size[0]
                     box_data.label_height = new_y + label_size[1]
 
-            print(f"Drawing white box on: {box_data.label_x()} - {box_data.label_y()}")
+            print(f"Drawing white box on: {box_data.label_x} - {box_data.label_y}")
             cv2.rectangle(image,
                           (box_data.label_x, box_data.label_y),
                           (box_data.label_width, box_data.label_height),
