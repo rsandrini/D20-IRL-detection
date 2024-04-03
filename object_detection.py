@@ -116,7 +116,10 @@ class ObjectDetector:
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
                                                             all_boxes,
-                                                            box_label[1])
+                                                            box_label[1][1])
+
+
+
                     white_box = (new_x, new_y - box_label[1][1] - 10), \
                                 (new_x + box_label[1][0], new_y + 5)
                     all_boxes[i] = (white_box[0], white_box[1], box_label)
