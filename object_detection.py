@@ -176,7 +176,7 @@ class ObjectDetector:
         return detections, image_path_new_file
 
     def is_collision(self, rect1, rectangles):
-
+        print(f"Checking collision for {rectangles}")
         (x1, y1), (w1, h1) = rect1
         for (x, y), (w, h) in rectangles:
             if (x1 < x + w and x1 + w1 > x and
