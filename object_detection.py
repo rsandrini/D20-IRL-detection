@@ -99,8 +99,10 @@ class ObjectDetector:
                                 )  # Store label and its y-coordinate
 
         for i, box_data in enumerate(all_boxes):
+            print(box_data)
+            print()
+
             white_box_start, white_box_end, box_label = box_data
-            print(all_boxes[0])
             # Detect collision and draw a white rectangle with text of result
             # Check for collision with other labels
             # Considering that there are only two detections, we can check for collision with the other label
