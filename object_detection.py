@@ -154,7 +154,7 @@ class ObjectDetector:
     def is_collision(self, rect1, rects):
 
         (x1, y1), (w1, h1) = rect1
-        for x, y, w, h in rects:
+        for (x, y), (w, h) in rects:
             if (x1 < x + w and x1 + w1 > x and
                     y1 < y + h and y1 + h1 > y):
                 return True
