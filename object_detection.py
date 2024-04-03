@@ -156,11 +156,11 @@ class ObjectDetector:
                           (255, 255, 255),
                           cv2.FILLED)
 
-            print(f"Text on: ({self.box_data.label_text_x}, {self.box_data.label_text_y})")
+            print(f"Text on: ({box_data.label_text_x}, {box_data.label_text_y})")
 
             cv2.putText(image,
-                        self.box_data.label_text,
-                        (self.box_data.label_text_x, self.box_data.label_text_y),
+                        box_data.label_text,
+                        (box_data.label_text_x, box_data.label_text_y),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.7, (0, 0, 0), 2)
 
