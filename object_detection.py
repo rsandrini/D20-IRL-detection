@@ -117,6 +117,9 @@ class ObjectDetector:
                     white_box = (new_x, new_y - box_label[1][1] - 10), \
                                 (new_x + box_label[1][0], new_y + 5)
                     all_boxes[i] = (white_box[0], white_box[1], box_label)
+                    print(f"New position: {white_box[0]} - {white_box[1]}")
+                    print(all_boxes[i])
+                    print("-----------------")
 
 
             # cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
