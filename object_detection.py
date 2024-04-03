@@ -149,7 +149,7 @@ class ObjectDetector:
                 # Get the two boxes inside the opoosite object
                 if self.is_collision(box_data.label_box(), boxes_without_current):
                     print("Collision detected, adjusting label position")
-                    new_x, new_y = self.find_clear_position((imH + 10, imW + 10),
+                    new_x, new_y = self.find_clear_position((box_data.label_width + 40, box_data.label_height + 40),
                                                             boxes_without_current,
                                                             box_data.label_box_width_height(),
                                                             step=5)
@@ -197,7 +197,7 @@ class ObjectDetector:
     def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
         """
         Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles.
-    
+
         :param boundary: A tuple containing the width and height of the search area (w, h).
         :param rectangles: A list of existing rectangles in the format (x, y, w, h).
         :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
