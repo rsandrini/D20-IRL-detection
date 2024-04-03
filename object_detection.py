@@ -142,7 +142,7 @@ class ObjectDetector:
                 if self.is_collision(box_data.label_box(), all_boxes):
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position((imH + 10, imW + 10),
-                                                            all_boxes,
+                                                            [(box_data[1].detection_box(), box_data[1].label_box())] if i == 0 else [(box_data[0].detection_box(), box_data[0].label_box())],
                                                             box_data.label_box_width_height())
 
                     # Adjust the text inside the white box
