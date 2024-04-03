@@ -205,7 +205,7 @@ class ObjectDetector:
                 # pprint(rectangles)
                 # print()
                 for (x1, y1), (w1, h1) in rectangles:
-                    if self.is_collision(new_rect, [(x1, y1), (w1, h1)]):
+                    if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
                         collision_found = True
                         break
                 if not collision_found:
