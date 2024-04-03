@@ -139,9 +139,7 @@ class ObjectDetector:
 
             if len(boxes_data) == 2:  # If only one die was detected, we can skip this step
                 # Get the two boxes inside the opoosite object
-                if self.is_collision(box_data.label_box(),
-                                     [boxes_data[1].detection_box(), boxes_data[1].label_box()] if i == 0
-                                     else [boxes_data[0].detection_box(), boxes_data[0].label_box()]):
+                if self.is_collision(box_data.label_box(), all_boxes):
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position((imH + 10, imW + 10),
                                                             all_boxes,
