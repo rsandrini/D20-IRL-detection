@@ -175,10 +175,10 @@ class ObjectDetector:
 
         return detections, image_path_new_file
 
-    def is_collision(self, rect1, rects):
+    def is_collision(self, rect1, rectangles):
 
         (x1, y1), (w1, h1) = rect1
-        for (x, y), (w, h) in rects:
+        for (x, y), (w, h) in rectangles:
             if (x1 < x + w and x1 + w1 > x and
                     y1 < y + h and y1 + h1 > y):
                 return True
@@ -205,7 +205,7 @@ class ObjectDetector:
                 # pprint(rectangles)
                 # print()
                 for (x1, y1), (w1, h1) in rectangles:
-                    if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
+                    if self.is_collision(new_rect, ((x1, y1), (w1, h1))):
                         collision_found = True
                         break
                 if not collision_found:
