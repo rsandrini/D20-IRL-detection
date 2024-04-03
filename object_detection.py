@@ -5,8 +5,9 @@ from tflite_runtime.interpreter import Interpreter
 
 
 class BoxDetection:
-    def __init__(self, detection_x, detection_y, detection_width, detection_height, label_x, label_y, label_width,
-                 label_height, label_text, label_text_x, label_text_y):
+    def __init__(self, detection_x, detection_y, detection_width, detection_height,
+                 label_x, label_y, label_width, label_height,
+                 label_text, label_text_x, label_text_y):
         self.detection_x = detection_x
         self.detection_y = detection_y
         self.detection_width = detection_width
@@ -104,16 +105,16 @@ class ObjectDetector:
                 label_ymin = max(label_size[1], ymin)  # Ensure label doesn't extend beyond top of the image
                 label_xmin = xmin
 
-                # RIGHT SIDE TOP
-                if label_xmin < imW / 2 and label_ymin < imH / 3:
-                    label_xmin = xmin - 15
-
-                # LEFT SIDE TOP
-                elif label_xmin > imW / 2 and label_ymin < (imH / 3):
-                    label_xmin = xmax
-
-                if label_ymin < label_size[1] + 10:
-                    label_ymin = ymin + label_size[1] + 10 # Move label above the box if it extends beyond the top
+                # # RIGHT SIDE TOP
+                # if label_xmin < imW / 2 and label_ymin < imH / 3:
+                #     label_xmin = xmin - 15
+                #
+                # # LEFT SIDE TOP
+                # elif label_xmin > imW / 2 and label_ymin < (imH / 3):
+                #     label_xmin = xmax
+                #
+                # if label_ymin < label_size[1] + 10:
+                #     label_ymin = ymin + label_size[1] + 10 # Move label above the box if it extends beyond the top
 
                 cv2.rectangle(image,
                               (xmin, ymin),
@@ -165,8 +166,8 @@ class ObjectDetector:
             #               (xmin + label_size[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
 
             cv2.rectangle(image,
-                          (box_data.label_x, box_data.label_y - box_data.label_height - 10),
-                          (box_data.label_x + box_data.label_width, box_data.label_y + box_data.label_height + 5),
+                          (box_data.label_x, box_data.label_y),
+                          (box_data.label_width, box_data.label_height),
                           (255, 255, 255),
                           cv2.FILLED)
 
