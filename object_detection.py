@@ -90,42 +90,44 @@ class ObjectDetector:
                               (xmax, ymax),
                               (10, 255, 0),
                               2)
+                # Document the struct here
+                ''' box
+                label_xmin: x-coordinate of the label
+                label_ymin: y-coordinate of the label
+                width: width of text box 
+                height: height of text box
+                [ label_text: text of the label, 
+                    (label_xmin: text x position, label_ymin: text y position) ]
+                (xmin, ymin): top left corner of the bounding box
+                (xmax, ymax): bottom right corner of the bounding box
+                '''
+                box = ((label_xmin, label_ymin - label_size[1] - 10),
+                       (label_xmin + label_size[0], label_ymin + 5),
+                       [label_text, (label_xmin, label_ymin)],
+                       (xmin, ymin), (xmax, ymax))
 
-                all_boxes.append(((label_xmin,
-                                  label_ymin - label_size[1] - 10),
-                                  (label_xmin + label_size[0],
-                                  label_ymin + 5),
-                                 [label_text, (label_xmin, label_ymin)])
-                                )  # Store label and its y-coordinate
-
-        print(all_boxes)
-        print()
+                all_boxes.append(box)  # Store label and its y-coordinate
 
         for i, box_data in enumerate(all_boxes):
-            print(box_data)
-            print()
-
-            white_box_start, white_box_end, box_label = box_data
+            white_box_start, white_box_end, box_label, detection_box_start, detection_box_end = box_data
+            print(f"Checking {white_box_start} {white_box_end} and {detection_box_start} {detection_box_end}")
             # Detect collision and draw a white rectangle with text of result
             # Check for collision with other labels
             # Considering that there are only two detections, we can check for collision with the other label
             if len(all_boxes) == 2:  # If only one die was detected, we can skip this step
-                print(f"Checking for collision with other labels")
+                print(f"Checking for collision with white box and other boxes")
                 if self.is_collision((white_box_start, white_box_end),
-                                     (all_boxes[1][0], all_boxes[1][1]) if i == 0 else (all_boxes[0][0], all_boxes[0][1])):
+                                     [(all_boxes[1][0], all_boxes[1][1]), (all_boxes[1][3], all_boxes[1][4])] if i == 0
+                                     else [(all_boxes[0][0], all_boxes[0][1]), (all_boxes[0][3], all_boxes[0][4])]):
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position([imH + 10, imW + 10],
                                                             all_boxes,
                                                             box_label[1][1])
 
-
-
                     white_box = (new_x, new_y - box_label[1][1] - 10), \
                                 (new_x + box_label[1][0], new_y + 5)
                     all_boxes[i] = (white_box[0], white_box[1], box_label)
-                    print(f"New position: {white_box[0]} - {white_box[1]}")
-                    print(all_boxes[i])
-                    print("-----------------")
+
 
 
             # cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
@@ -149,15 +151,18 @@ class ObjectDetector:
 
         return detections, image_path_new_file
 
-    def is_collision(self, rect1, rect2):
+    def is_collision(self, rect1, rect2, rect3):
         # Check for collision between two rectangles
-        print(f"Checking for collision between {rect1} and {rect2}")
+        print(f"Checking for collision between {rect1} and {rect2} and {rect3}")
 
         (x1, y1), (w1, h1) = rect1
         (x2, y2), (w2, h2) = rect2
+        (x3, y3), (w3, h3) = rect3
 
         if (x1 < x2 + w2 and x1 + w1 > x2 and
-                y1 < y2 + h2 and y1 + h1 > y2):
+                y1 < y2 + h2 and y1 + h1 > y2) or \
+            (x1 < x3 + w3 and x1 + w1 > x3 and
+                y1 < y3 + h3 and y1 + h1 > y3):
             return True
         return False
 
@@ -178,8 +183,8 @@ class ObjectDetector:
             for x in range(0, boundary_w - new_w + 1, step):
                 new_rect = (x, y, new_w, new_h)
                 collision_found = False
-                for rect_start, rect_end, _ in rectangles:
-                    if self.is_collision(new_rect, (rect_start, rect_end)):
+                for rect_start, rect_end, _, detect_start, detect_end in rectangles:
+                    if self.is_collision(new_rect, (rect_start, rect_end), (detect_start, detect_end)):
                         collision_found = True
                         break
                 if not collision_found:
