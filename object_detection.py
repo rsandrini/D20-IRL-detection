@@ -150,7 +150,7 @@ class ObjectDetector:
                 # Get the two boxes inside the opoosite object
                 if self.is_collision(box_data.label_box(), boxes_without_current):
                     print("Collision detected, adjusting label position")
-                    new_x, new_y = self.find_clear_position_spiral(box_data.label_box(),
+                    new_x, new_y = self.find_clear_position_spiral(box_data.label_text_position(),
                                                                    boxes_without_current,
                                                                    box_data.label_box_width_height())
 
