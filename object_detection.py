@@ -127,6 +127,9 @@ class ObjectDetector:
 
 
         all_boxes = [[box.detection_box(), box.label_box()]for box in boxes_data]
+        print(all_boxes)
+        print()
+        
         for i, box_data in enumerate(boxes_data):
             # white_box_start, white_box_end, box_label, detection_box_start, detection_box_end = box_data
             print(f"Checking {box_data.label_box()} collision")
