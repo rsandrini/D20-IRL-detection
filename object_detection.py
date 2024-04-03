@@ -151,7 +151,8 @@ class ObjectDetector:
                     print("Collision detected, adjusting label position")
                     new_x, new_y = self.find_clear_position((imH + 10, imW + 10),
                                                             boxes_without_current,
-                                                            box_data.label_box_width_height())
+                                                            box_data.label_box_width_height(),
+                                                            step=5)
 
                     # Adjust the text inside the white box
                     label_size, _ = cv2.getTextSize(label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
@@ -196,7 +197,7 @@ class ObjectDetector:
     def find_clear_position(self, boundary, rectangles, new_rect_size, step=1):
         """
         Find a clear position for a new rectangle that doesn't collide with any of the existing rectangles.
-
+    
         :param boundary: A tuple containing the width and height of the search area (w, h).
         :param rectangles: A list of existing rectangles in the format (x, y, w, h).
         :param new_rect_size: A tuple containing the width and height of the new rectangle (w, h).
@@ -206,17 +207,20 @@ class ObjectDetector:
         (boundary_w, boundary_h) = boundary
         (new_w, new_h) = new_rect_size
 
-        for y in range(0, boundary_h - new_h + 1, step):
-            for x in range(0, boundary_w - new_w + 1, step):
-                new_rect = (x, y), (new_w, new_h)
-                collision_found = False
-                # from pprint import pprint
-                # pprint(rectangles)
-                # print()
-                for (x1, y1), (w1, h1) in rectangles:
-                    if self.is_collision(new_rect, [((x1, y1), (w1, h1)),]):
-                        collision_found = True
-                        break
-                if not collision_found:
-                    return (x, y)
+        # Assuming you want to start from the center
+        start_x = (boundary_w - new_w) // 2
+        start_y = (boundary_h - new_h) // 2
+
+        for offset in range(0, max(boundary_w, boundary_h), step):
+            for y in range(max(0, start_y - offset), min(boundary_h - new_h + 1, start_y + offset + 1), step):
+                for x in range(max(0, start_x - offset), min(boundary_w - new_w + 1, start_x + offset + 1), step):
+                    new_rect = ((x, y), (new_w, new_h))
+                    collision_found = False
+                    for ((x1, y1), (w1, h1)) in rectangles:
+                        if self.is_collision(new_rect, [((x1, y1), (w1, h1))]):
+                            collision_found = True
+                            break
+                    if not collision_found:
+                        return (x, y)
         return None
+
