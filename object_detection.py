@@ -121,7 +121,14 @@ class ObjectDetector:
                               (10, 255, 0),
                               2)
 
-                box = BoxDetection(xmin, ymin, xmax, ymax, label_xmin, label_ymin, label_xmin + label_size[0], label_ymin + 5, label_text, label_xmin, label_ymin)
+                # (label_xmin,
+                #  label_ymin - label_size[1] - 10),
+                # (label_xmin + label_size[0],
+                #  label_ymin + 5),
+
+                box = BoxDetection(xmin, ymin, xmax, ymax,
+                                   label_xmin, label_ymin - label_size[1] - 10, label_xmin + label_size[0], label_ymin + 5,
+                                   label_text, label_xmin, label_ymin)
 
                 boxes_data.append(box)  # Store label and its y-coordinate
 
@@ -156,6 +163,7 @@ class ObjectDetector:
             print(f"Drawing white box on: {box_data.label_x} - {box_data.label_y}")
             # cv2.rectangle(image, (xmin, label_ymin - label_size[1] - 10),
             #               (xmin + label_size[0], label_ymin + 5), (255, 255, 255), cv2.FILLED)
+
             cv2.rectangle(image,
                           (box_data.label_x, box_data.label_y - box_data.label_height - 10),
                           (box_data.label_x + box_data.label_width, box_data.label_y + box_data.label_height + 5),
