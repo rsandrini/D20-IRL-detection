@@ -29,7 +29,14 @@ Open the Colab notebook in your browser by clicking the icon above. Work through
 The old version of this guide shows how to set up a TensorFlow training environment locally on your PC. Be warned: it's a lot of work, and the guide is outdated. [Here's a link to the local training guide.](doc/local_training_guide.md)
 
 ## Step 2. Setup TFLite Runtime Environment on Your Device
-Once you have a trained `.tflite` model, the next step is to deploy it on a device like a computer, Raspberry Pi, or Android phone. To run the model, you'll need to install the TensorFlow or the TensorFlow Lite Runtime on your device and set up the Python environment and directory structure to run your application in. The [deploy_guides](deploy_guides) folder in this repository has step-by-step guides showing how to set up a TensorFlow environment on several different devices. Links to the guides are given below.
+Once you have a trained `.tflite` model, the next step is to deploy it on a device like a computer, Raspberry Pi, or Android phone.
+
+> **Note:** This project uses `ai-edge-litert` (Google's successor to `tflite-runtime`) which supports Python 3.12+. Install it with:
+> ```bash
+> pip install ai-edge-litert opencv-python
+> ```
+
+To run the model, you'll need to set up the Python environment and directory structure. The [deploy_guides](deploy_guides) folder in this repository has step-by-step guides showing how to set up a TensorFlow environment on several different devices. Links to the guides are given below.
 
 ### Raspberry Pi
 Follow the [Raspberry Pi setup guide](deploy_guides/Raspberry_Pi_Guide.md) to install TFLite Runtime on a Raspberry Pi 3 or 4 and run a TensorFlow Lite model. This guide also shows how to use the Google Coral USB Accelerator to greatly increase the speed of quantized models on the Raspberry Pi.
@@ -67,15 +74,24 @@ If you’d like try using the sample TFLite object detection model provided by G
 
 <details>
    <summary>Webcam</summary>
-Make sure you have a USB webcam plugged into your computer. If you’re on a laptop with a built-in camera, you don’t need to plug in a USB webcam. 
+Make sure you have a USB webcam plugged into your computer.
 
-From the `tflite1` directory, issue: 
+From the project root, issue:
 
 ```
-python TFLite_detection_webcam.py --modeldir=TFLite_model 
+python3 tflite1/TFLite_detection_webcam.py --modeldir=tflite1/custom_model_lite
 ```
 
-After a few moments of initializing, a window will appear showing the webcam feed. Detected objects will have bounding boxes and labels displayed on them in real time.
+Optional arguments:
+- `--threshold 0.5` — minimum confidence to display a detection (default: 0.5)
+- `--nms_threshold 0.45` — NMS IoU threshold (default: 0.45)
+- `--resolution 1280x720` — webcam resolution (default: 1280x720)
+
+After a few moments of initializing, a window will appear showing the webcam feed. Detected D20 faces (1–20) will have bounding boxes and confidence labels drawn in real time. Press `q` to quit.
+
+> **Note:** This script uses a YOLOv8n TFLite model with a single output tensor `[1, 24, 8400]`.
+> Labels are hardcoded as 1–20 (no `labelmap.txt` needed). The `--labels` argument from the
+> original SSD-MobileNet version has been removed.
 </details>
 
 <details>

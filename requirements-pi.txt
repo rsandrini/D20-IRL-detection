@@ -1,3 +1,4 @@
+RPi.GPIO
 imageio
 flask
 pillow
