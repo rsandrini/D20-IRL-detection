@@ -1,5 +1,5 @@
 imageio
-tflite-runtime
 flask
-
 pillow
+python-dotenv
+ultralytics

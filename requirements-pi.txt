@@ -1,0 +1,5 @@
+imageio
+flask
+pillow
+python-dotenv
+tflite-runtime

@@ -1,115 +1,94 @@
-## Real-time D20 Dice Classification with Raspberry Pi using hardware integration
+# Real-time D20 Dice Detection with Raspberry Pi
 
-This project is based on the tutorial provided in the YouTube video [link](https://www.youtube.com/watch?v=XZ7FYAMCc4M), where we implement a D20 dice classification system using TensorFlow 2.0. The system integrates with a Raspberry Pi and additional hardware to physically roll a dice, capture an image, detect the dice, classify it, and return the result in real-time.
+Physical D20 dice roller with real-time face detection. A servo motor rolls the dice, a USB camera captures the result, and a YOLOv8n TFLite model running on a Raspberry Pi classifies which face is showing (1–20). Results are exposed via a Flask REST API and web UI.
 
 ![](README/img.png)
-
 ![](3d_model/imgs/hardware.gif)
-
-
 ![](README/output.gif)
 ![](README/output.jpg)
 
-### Objective
+## Hardware
 
-The primary objective of this project is to demonstrate the process of training an object detection model and converting it into TensorFlow Lite format. This allows us to deploy the model on edge devices like the Raspberry Pi for real-time inference.
-Key Components
+- Raspberry Pi (3B+ or 4 recommended)
+- USB webcam
+- Servo motor connected to GPIO pin 6
+- 3D printed dice box (STL files in `3d_model/stl/`)
 
-TensorFlow 2 Object Detection API: Utilized to train an SSD-MobileNet or EfficientDet model with a custom dataset.
-Raspberry Pi: Integrated with additional hardware to roll the dice and capture images.
-Image Processing: Images captured by the Raspberry Pi are processed to detect and classify the rolled dice.
-TensorFlow Lite: The trained model is converted to TensorFlow Lite format, enabling efficient deployment on edge devices.
+## Setup
 
-### Usage
-
-To replicate this project, follow these steps:
-
-Train the model using the TensorFlow 2 Object Detection API with your custom dataset.
-
-Use the https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi
-
-Convert the trained model to TensorFlow Lite format.
-
-https://www.youtube.com/watch?v=aimSGOAUI8Y&feature=youtu.be
-
-Set up the Raspberry Pi and integrate additional hardware for rolling the dice and capturing images.
-
-Just clone this repository and run the following command:
-
+**Raspberry Pi:**
 ```bash
-python3 --m venv venv
-source venv/bin/activate
+python3 -m venv venv && source venv/bin/activate
 chmod +x tflite1/get_pi_requirements.sh
 ./tflite1/get_pi_requirements.sh
-pip install -r requirements.txt
+pip install -r requirements-pi.txt
+cp .env.example .env
+./fixcam.sh  # optional: calibrate USB camera focus/exposure
 python3 main.py
-``` 
+```
 
-All the necessary files are included in the repository, including the trained TensorFlow Lite model, label map, and Python scripts for image processing and inference on the Raspberry Pi.
+**PC (training):**
+```bash
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+```
 
-
-## HTTP API Route
+## API
 
 ### POST /api/roll
 
-This route is used to roll the dice and capture an image for classification. It triggers the servo motor to rotate the dice and capture an image using the camera module. The captured image is processed to detect and classify the rolled dice, and the result is returned in the response.
-
-Response:
+Triggers the servo, captures a frame, runs detection, returns the result.
 
 ```json
 {
   "detections": "7 and 14",
-  "gif": "static/results/6f6b278b-3f94-4383-b591-0fce30f0cc65.gif",
-  "image": "static/results/6f6b278b-3f94-4383-b591-0fce30f0cc65.jpg",
+  "image": "static/results/<uuid>.jpg",
+  "gif": "static/results/<uuid>.gif",
   "time_elapsed": 2.37,
   "time_elapsed_detection": 0.25
 }
 ```
 
-## API
+Add `debug=true` in the form body to generate a GIF of the roll.
 
-### Object Detection
+## Model
 
-The object detection model is trained using the TensorFlow 2 Object Detection API, which provides a collection of pre-trained models and tools for training custom models. In this project, we use the SSD-MobileNet model with a custom dataset of dice images.
+**YOLOv8n** trained on a custom dataset of 329 labeled D20 images (~570 annotated instances across all 20 faces), exported to INT8 TFLite for edge inference.
 
-### TensorFlow Lite
+- ~3.2 MB model vs 11.5 MB for the original SSD-MobileNet
+- ~50ms inference on Pi 4 vs ~250ms previously
 
-The trained object detection model is converted to TensorFlow Lite format for deployment on edge devices like the Raspberry Pi. TensorFlow Lite is a lightweight solution for running machine learning models on resource-constrained devices, enabling real-time inference with minimal latency.
+### Retraining
 
-### Raspberry Pi
+```bash
+# 1. Convert annotations (Pascal VOC XML → YOLO format)
+python scripts/convert_voc_to_yolo.py
 
-The Raspberry Pi is a popular single-board computer that serves as the edge device for this project. It is integrated with additional hardware, including a servo motor for rolling the dice and a camera module for capturing images. The Raspberry Pi runs the TensorFlow Lite model to detect and classify the rolled dice in real-time.
+# 2. Train (~5 min on RTX 3080)
+yolo train model=yolov8n.pt data=data/data.yaml epochs=150 imgsz=640 batch=16 patience=30
 
-### Image Processing
+# 3. Export to TFLite INT8
+yolo export model=runs/detect/train/weights/best.pt format=tflite imgsz=640 int8=True
 
-Images captured by the Raspberry Pi are processed to detect and classify the dice. The image processing pipeline involves resizing, normalization, and inference using the TensorFlow Lite model. The detected dice are classified based on the trained model, and the result is displayed on the screen in real-time.
+# 4. Deploy
+cp runs/detect/train/weights/best_saved_model/best_int8.tflite tflite1/custom_model_lite/detect.tflite
+```
 
-### Hardware Integration
+### Improving accuracy with new hardware
 
-The Raspberry Pi is connected to a servo motor and camera module for rolling the dice and capturing images. The servo motor is controlled using PWM signals to rotate the dice, while the camera module captures images of the rolled dice. The hardware components are integrated with the Raspberry Pi to enable real-time object detection and classification.
+After assembling the rig with a new webcam, capture real rolls with the actual setup and fine-tune:
+1. Roll the dice, confirm the result, save labeled frames to `dice_training/`
+2. Re-run the training pipeline above
+3. Replace `detect.tflite`
 
-### Real-time Inference
+## 3D Models
 
-The trained TensorFlow Lite model is deployed on the Raspberry Pi for real-time inference. The model processes images captured by the camera module to detect and classify the rolled dice. The inference results are displayed on the screen, providing real-time feedback on the dice classification.
+STL files for the dice box and mechanical parts are in `3d_model/stl/`. The current model does not fit the Raspberry Pi and servo motor — a revised version is planned.
 
-## 3d models and STL files
+## TODO
 
-The 3d model of the dice was created using Sketup and the STL file is available in the repository. The 3d model was used to create the custom dataset for training the object detection model. Unfortunatelly, the 3d model is not precise enough to store the raspberry pi and the servo motor in the box. A new version will be modeled in the future.
-
-
-## Conclusion
-
-Real-time object detection and classification on edge devices like the Raspberry Pi open up numerous possibilities for practical applications. This project serves as a demonstration of how machine learning models can be trained, converted, and deployed for real-world tasks, such as dice classification, in a resource-constrained environment.
-
-By following the steps outlined in this project, you'll gain insights into the entire workflow of training, converting, and deploying TensorFlow Lite models on edge devices, paving the way for further exploration and experimentation in the field of edge AI.
-
-# TODO
-
-- [ ] Create a more precise 3d model for the dice box
-- [ ] API authentication for external usage, as DaaS (Dice as a Service haha..ha..ha)
-- [ ] Captcha implementation for website usage
-- [ ] Queue system for multiple requests
-- [ ] Improve the 3d model to store the raspberry pi and the servo motor
-- [ ] Fine tune the object detection model for better accuracy
-- [ ] Implement a more robust image processing pipeline
-- [ ] Add support for select a random dice in the roll in the response
+- [ ] Improve 3D model to house the Raspberry Pi and servo motor
+- [ ] Add data collection mode to Flask app (roll → confirm label → auto-save for retraining)
+- [ ] Improve motion detection robustness (background subtraction)
+- [ ] API authentication for external usage
+- [ ] Queue system for concurrent requests
