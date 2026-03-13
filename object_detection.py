@@ -1,7 +1,10 @@
 import os
 import cv2
 import numpy as np
-from tflite_runtime.interpreter import Interpreter
+try:
+    from ai_edge_litert.interpreter import Interpreter
+except ImportError:
+    from tflite_runtime.interpreter import Interpreter
 
 
 class ObjectDetector:

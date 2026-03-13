@@ -2,4 +2,5 @@ imageio
 flask
 pillow
 python-dotenv
-tflite-runtime
+ai-edge-litert
+opencv-python

@@ -93,15 +93,14 @@ use_TPU = args.edgetpu
 # Import TensorFlow libraries
 # If tflite_runtime is installed, import interpreter from tflite_runtime, else import from regular tensorflow
 # If using Coral Edge TPU, import the load_delegate library
-pkg = importlib.util.find_spec('tflite_runtime')
-if pkg:
+try:
+    from ai_edge_litert.interpreter import Interpreter
+    if use_TPU:
+        from ai_edge_litert.interpreter import load_delegate
+except ImportError:
     from tflite_runtime.interpreter import Interpreter
     if use_TPU:
         from tflite_runtime.interpreter import load_delegate
-else:
-    from tensorflow.lite.python.interpreter import Interpreter
-    if use_TPU:
-        from tensorflow.lite.python.interpreter import load_delegate
 
 # If using Edge TPU, assign filename for Edge TPU model
 if use_TPU:
