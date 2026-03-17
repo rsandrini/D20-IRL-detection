@@ -41,14 +41,13 @@ def hardware_activation():
     GPIO.setup(pin, GPIO.OUT)
     try:
         # Shake pattern: rapid pulses to agitate the dice
-        for _ in range(2):
-            GPIO.output(pin, GPIO.HIGH)
-            time.sleep(0.1)
-            GPIO.output(pin, GPIO.LOW)
-            time.sleep(0.3)
+        GPIO.output(pin, GPIO.HIGH)
+        time.sleep(0.1)
+        GPIO.output(pin, GPIO.LOW)
+        time.sleep(0.3)
 
         # Final push: random duration so dice lands differently each roll
-        roll_for = random.uniform(0.1, 0.4)
+        roll_for = random.uniform(0.2, 0.4)
         GPIO.output(pin, GPIO.HIGH)
         print(f"GPIO {pin} rolling for {roll_for:.2f}s")
         time.sleep(roll_for)
@@ -96,6 +95,24 @@ def roll_dice(uuid, folder, debug):
     frames = []           # GIF frames (small, RGB)
     detection_frame = None  # Full-res ROI frame for model inference
 
+    # Auto-calibrate motion threshold from baseline noise before rolling
+    print("Calibrating motion baseline...")
+    baseline_scores = []
+    for _ in range(10):
+        ret, frame = cap.read()
+        if not ret:
+            continue
+        small = cv2.resize(_apply_roi(frame), (480, 270), interpolation=cv2.INTER_AREA)
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        if last_frame_gray is not None:
+            baseline_scores.append(np.mean(cv2.absdiff(gray, last_frame_gray)))
+        last_frame_gray = gray
+
+    noise_floor = np.mean(baseline_scores) if baseline_scores else 1.0
+    motion_threshold = max(noise_floor * 3, noise_floor + 2.0)
+    print(f"Noise floor: {noise_floor:.2f} → motion threshold: {motion_threshold:.2f}")
+    last_frame_gray = None
+
     hardware_activation()
 
     while True:
@@ -112,7 +129,7 @@ def roll_dice(uuid, folder, debug):
             diff = cv2.absdiff(gray, last_frame_gray)
             motion_score = np.mean(diff)
 
-            if motion_score > 1.5:
+            if motion_score > motion_threshold:
                 frames_since_last_motion = 0
             else:
                 frames_since_last_motion += 1

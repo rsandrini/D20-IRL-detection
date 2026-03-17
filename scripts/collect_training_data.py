@@ -33,9 +33,25 @@ def capture_after_roll():
     for _ in range(5):
         cap.read()
 
+    # Auto-calibrate noise floor before rolling
+    last_gray = None
+    baseline_scores = []
+    for _ in range(10):
+        ret, frame = cap.read()
+        if not ret:
+            continue
+        small = cv2.resize(_apply_roi(frame), (480, 270), interpolation=cv2.INTER_AREA)
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        if last_gray is not None:
+            baseline_scores.append(np.mean(cv2.absdiff(gray, last_gray)))
+        last_gray = gray
+
+    noise_floor = np.mean(baseline_scores) if baseline_scores else 1.0
+    motion_threshold = max(noise_floor * 3, noise_floor + 2.0)
+    last_gray = None
+
     hardware_activation()
 
-    last_gray = None
     frames_since_last_motion = 0
     detection_frame = None
 
@@ -45,11 +61,12 @@ def capture_after_roll():
             continue
 
         frame = _apply_roi(frame)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        small = cv2.resize(frame, (480, 270), interpolation=cv2.INTER_AREA)
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
 
         if last_gray is not None:
             diff = cv2.absdiff(gray, last_gray)
-            if np.mean(diff) > 1.5:
+            if np.mean(diff) > motion_threshold:
                 frames_since_last_motion = 0
             else:
                 frames_since_last_motion += 1
