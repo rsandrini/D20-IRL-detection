@@ -1,0 +1,38 @@
+<annotation>
+	<folder>Camera Roll</folder>
+	<filename>WIN_20240228_21_26_09_Pro.jpg</filename>
+	<path>C:\Users\rafae\Pictures\Camera Roll\WIN_20240228_21_26_09_Pro.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>1280</width>
+		<height>720</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>1</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>566</xmin>
+			<ymin>80</ymin>
+			<xmax>663</xmax>
+			<ymax>172</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>13</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>538</xmin>
+			<ymin>286</ymin>
+			<xmax>640</xmax>
+			<ymax>387</ymax>
+		</bndbox>
+	</object>
+</annotation>

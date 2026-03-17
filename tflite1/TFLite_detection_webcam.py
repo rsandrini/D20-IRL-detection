@@ -120,13 +120,11 @@ while True:
         confs_f = confidences[mask]
         ids_f   = class_ids[mask]
 
-        # Scale from model input size to display frame size
-        sx = imW / input_width
-        sy = imH / input_height
-        xmin = np.clip((boxes_f[:, 0] - boxes_f[:, 2] / 2) * sx, 0, imW).astype(int)
-        ymin = np.clip((boxes_f[:, 1] - boxes_f[:, 3] / 2) * sy, 0, imH).astype(int)
-        bw   = (boxes_f[:, 2] * sx).astype(int)
-        bh   = (boxes_f[:, 3] * sy).astype(int)
+        # Boxes are normalized (0-1) — scale directly to frame size
+        xmin = np.clip((boxes_f[:, 0] - boxes_f[:, 2] / 2) * imW, 0, imW).astype(int)
+        ymin = np.clip((boxes_f[:, 1] - boxes_f[:, 3] / 2) * imH, 0, imH).astype(int)
+        bw   = (boxes_f[:, 2] * imW).astype(int)
+        bh   = (boxes_f[:, 3] * imH).astype(int)
 
         nms_boxes = [[int(x), int(y), int(w), int(h)] for x, y, w, h in zip(xmin, ymin, bw, bh)]
         indices = cv2.dnn.NMSBoxes(nms_boxes, confs_f.tolist(), min_conf_threshold, nms_threshold)

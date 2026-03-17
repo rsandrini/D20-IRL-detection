@@ -35,3 +35,6 @@ images_fail_helper/*
 
 database.ini
 *.db
+
+# Windows Zone.Identifier metadata files
+*:Zone.Identifier

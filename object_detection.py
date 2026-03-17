@@ -57,13 +57,11 @@ class ObjectDetector:
         confidences = confidences[mask]
         class_ids = class_ids[mask]
 
-        # Scale from model input coords to original image size
-        sx = imW / self.input_width
-        sy = imH / self.input_height
-        xmin = np.clip((boxes_raw[:, 0] - boxes_raw[:, 2] / 2) * sx, 0, imW).astype(int)
-        ymin = np.clip((boxes_raw[:, 1] - boxes_raw[:, 3] / 2) * sy, 0, imH).astype(int)
-        bw = (boxes_raw[:, 2] * sx).astype(int)
-        bh = (boxes_raw[:, 3] * sy).astype(int)
+        # Boxes are normalized (0-1) — scale directly to original image size
+        xmin = np.clip((boxes_raw[:, 0] - boxes_raw[:, 2] / 2) * imW, 0, imW).astype(int)
+        ymin = np.clip((boxes_raw[:, 1] - boxes_raw[:, 3] / 2) * imH, 0, imH).astype(int)
+        bw = (boxes_raw[:, 2] * imW).astype(int)
+        bh = (boxes_raw[:, 3] * imH).astype(int)
 
         nms_boxes = [[int(x), int(y), int(w), int(h)] for x, y, w, h in zip(xmin, ymin, bw, bh)]
         indices = cv2.dnn.NMSBoxes(nms_boxes, confidences.tolist(), self.min_conf_threshold, self.nms_threshold)
