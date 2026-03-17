@@ -2,9 +2,17 @@ import base64
 import os
 import uuid
 import requests
-from flask import Flask, request, render_template, jsonify
+import glob
+import shutil
+from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom import minidom
+import cv2
+from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory
 from object_detection import ObjectDetector
 from dice import *
+
+TO_LABEL_DIR = "to_label"
+TRAINING_DIR = "dice_training"
 
 #load the .env file
 from dotenv import load_dotenv
@@ -72,6 +80,89 @@ def api_roll_dice():
                     "time_elapsed_detection": time_elapsed_detection
                     }
     )
+
+
+def _pending_images():
+    os.makedirs(TO_LABEL_DIR, exist_ok=True)
+    return sorted(glob.glob(os.path.join(TO_LABEL_DIR, "*.jpg")))
+
+
+def _save_pascal_voc(filename, img_w, img_h, boxes):
+    """Save Pascal VOC XML annotation matching existing training data format."""
+    ann = Element("annotation")
+    SubElement(ann, "folder").text = "dice_training"
+    SubElement(ann, "filename").text = filename
+    SubElement(ann, "path").text = os.path.join(TRAINING_DIR, filename)
+    src = SubElement(ann, "source")
+    SubElement(src, "database").text = "Unknown"
+    size = SubElement(ann, "size")
+    SubElement(size, "width").text = str(img_w)
+    SubElement(size, "height").text = str(img_h)
+    SubElement(size, "depth").text = "3"
+    SubElement(ann, "segmented").text = "0"
+
+    for box in boxes:
+        obj = SubElement(ann, "object")
+        SubElement(obj, "name").text = str(box["label"])
+        SubElement(obj, "pose").text = "Unspecified"
+        SubElement(obj, "truncated").text = "0"
+        SubElement(obj, "difficult").text = "0"
+        bnd = SubElement(obj, "bndbox")
+        SubElement(bnd, "xmin").text = str(box["x1"])
+        SubElement(bnd, "ymin").text = str(box["y1"])
+        SubElement(bnd, "xmax").text = str(box["x2"])
+        SubElement(bnd, "ymax").text = str(box["y2"])
+
+    xml_str = minidom.parseString(tostring(ann)).toprettyxml(indent="\t")
+    xml_filename = os.path.splitext(filename)[0] + ".xml"
+    with open(os.path.join(TRAINING_DIR, xml_filename), "w") as f:
+        f.write(xml_str)
+
+
+@app.route('/to_label/<filename>')
+def to_label_file(filename):
+    return send_from_directory(TO_LABEL_DIR, filename)
+
+
+@app.route('/label')
+def label_index():
+    pending = _pending_images()
+    if not pending:
+        return render_template('label.html', filename=None, total=0, remaining=0)
+    return redirect(url_for('label_image', filename=os.path.basename(pending[0])))
+
+
+@app.route('/label/<filename>', methods=['GET'])
+def label_image(filename):
+    pending = _pending_images()
+    total_labeled = len(glob.glob(os.path.join(TRAINING_DIR, "*.jpg")))
+    return render_template('label.html',
+                           filename=filename,
+                           total=total_labeled + len(pending),
+                           remaining=len(pending))
+
+
+@app.route('/label/<filename>', methods=['POST'])
+def label_save(filename):
+    data = request.get_json()
+    src_path = os.path.join(TO_LABEL_DIR, filename)
+    dst_path = os.path.join(TRAINING_DIR, filename)
+
+    if data.get('skip'):
+        os.remove(src_path)
+    else:
+        boxes = data.get('boxes', [])
+        if boxes:
+            img = cv2.imread(src_path)
+            h, w = img.shape[:2]
+            os.makedirs(TRAINING_DIR, exist_ok=True)
+            shutil.move(src_path, dst_path)
+            _save_pascal_voc(filename, w, h, boxes)
+
+    pending = _pending_images()
+    if pending:
+        return jsonify({"next": url_for('label_image', filename=os.path.basename(pending[0]))})
+    return jsonify({"next": url_for('label_index')})
 
 
 if __name__ == '__main__':

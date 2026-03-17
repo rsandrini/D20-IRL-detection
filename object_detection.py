@@ -10,7 +10,7 @@ except ImportError:
 class ObjectDetector:
     def __init__(self, model_dir):
         self.model_dir = model_dir
-        self.min_conf_threshold = 0.5
+        self.min_conf_threshold = 0.3
         self.nms_threshold = 0.45
         self.labels = [str(i) for i in range(1, 21)]
         self.load_model()

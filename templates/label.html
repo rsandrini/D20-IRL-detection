@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Training Data</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #eee; display: flex; height: 100vh; overflow: hidden; }
+
+        #canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+            position: relative;
+        }
+
+        canvas { cursor: crosshair; display: block; }
+
+        #sidebar {
+            width: 260px;
+            background: #2a2a2a;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        h2 { font-size: 16px; color: #aaa; }
+
+        .progress { font-size: 13px; color: #888; }
+
+        .box-slot {
+            background: #333;
+            border-radius: 8px;
+            padding: 12px;
+            border: 2px solid transparent;
+        }
+        .box-slot.active { border-color: #4af; }
+        .box-slot.done { border-color: #4c4; }
+
+        .box-slot h3 { font-size: 14px; margin-bottom: 8px; }
+        .box-slot .hint { font-size: 12px; color: #888; margin-bottom: 8px; }
+
+        .num-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+
+        .num-btn {
+            background: #444;
+            border: none;
+            color: #eee;
+            padding: 6px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .num-btn:hover { background: #4af; color: #000; }
+        .num-btn.selected { background: #4af; color: #000; font-weight: bold; }
+        .num-btn:disabled { opacity: 0.3; cursor: default; }
+
+        .btn {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+        }
+        .btn-save { background: #4c4; color: #000; }
+        .btn-save:disabled { background: #444; color: #888; cursor: default; }
+        .btn-skip { background: #c44; color: #fff; }
+        .btn-clear { background: #555; color: #eee; font-size: 12px; padding: 6px; }
+
+        #status { font-size: 12px; color: #888; text-align: center; }
+
+        #done-msg { text-align: center; padding: 40px; }
+        #done-msg h1 { color: #4c4; margin-bottom: 16px; }
+        #done-msg a { color: #4af; }
+    </style>
+</head>
+<body>
+
+{% if not filename %}
+<div id="done-msg">
+    <h1>All images labeled!</h1>
+    <p>Run the training pipeline to retrain the model.</p>
+    <p><a href="/">Back to roll page</a></p>
+</div>
+{% else %}
+
+<div id="canvas-area">
+    <canvas id="canvas"></canvas>
+</div>
+
+<div id="sidebar">
+    <div>
+        <h2>Label Training Image</h2>
+        <div class="progress">{{ remaining }} remaining of {{ total }} total</div>
+    </div>
+
+    <div class="box-slot active" id="slot-1">
+        <h3>Die 1</h3>
+        <div class="hint" id="hint-1">Draw a box around die 1</div>
+        <div class="num-grid" id="nums-1"></div>
+    </div>
+
+    <div class="box-slot" id="slot-2">
+        <h3>Die 2 <span style="font-weight:normal;color:#888;font-size:12px">(optional)</span></h3>
+        <div class="hint" id="hint-2">Draw a box around die 2</div>
+        <div class="num-grid" id="nums-2"></div>
+    </div>
+
+    <button class="btn btn-clear" onclick="clearBoxes()">Clear boxes</button>
+    <button class="btn btn-save" id="btn-save" disabled onclick="save()">Save & Next</button>
+    <button class="btn btn-skip" onclick="skip()">Skip</button>
+    <div id="status"></div>
+</div>
+
+<script>
+const FILENAME = "{{ filename }}";
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const img = new Image();
+img.src = '/to_label/' + FILENAME;
+
+let scale = 1;
+let imgW = 0, imgH = 0;
+
+// boxes[i] = {x1,y1,x2,y2,label} in original image coords
+let boxes = [null, null];
+let currentSlot = 0; // 0 or 1
+let drawing = false;
+let startX = 0, startY = 0;
+
+img.onload = () => {
+    const area = document.getElementById('canvas-area');
+    const maxW = area.clientWidth - 20;
+    const maxH = area.clientHeight - 20;
+    scale = Math.min(maxW / img.width, maxH / img.height, 1);
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    imgW = img.width;
+    imgH = img.height;
+    redraw();
+};
+
+// Build number grids
+[1, 2].forEach(slot => {
+    const grid = document.getElementById('nums-' + slot);
+    for (let n = 1; n <= 20; n++) {
+        const btn = document.createElement('button');
+        btn.className = 'num-btn';
+        btn.textContent = n;
+        btn.disabled = true;
+        btn.onclick = () => selectNumber(slot - 1, n);
+        grid.appendChild(btn);
+    }
+});
+
+function enableNumbers(slotIdx) {
+    const grid = document.getElementById('nums-' + (slotIdx + 1));
+    grid.querySelectorAll('.num-btn').forEach(b => b.disabled = false);
+}
+
+function selectNumber(slotIdx, num) {
+    if (!boxes[slotIdx]) return;
+    boxes[slotIdx].label = num;
+
+    const grid = document.getElementById('nums-' + (slotIdx + 1));
+    grid.querySelectorAll('.num-btn').forEach(b => {
+        b.classList.toggle('selected', parseInt(b.textContent) === num);
+    });
+
+    document.getElementById('slot-' + (slotIdx + 1)).classList.add('done');
+    document.getElementById('hint-' + (slotIdx + 1)).textContent = 'Face: ' + num + ' ✓';
+
+    // Move focus to next slot if slot 0 just got labeled
+    if (slotIdx === 0 && !boxes[1]) {
+        currentSlot = 1;
+        document.getElementById('slot-1').classList.remove('active');
+        document.getElementById('slot-2').classList.add('active');
+    }
+
+    updateSaveButton();
+    redraw();
+}
+
+function updateSaveButton() {
+    const ready = boxes[0] && boxes[0].label;
+    document.getElementById('btn-save').disabled = !ready;
+}
+
+canvas.addEventListener('mousedown', e => {
+    const r = canvas.getBoundingClientRect();
+    startX = e.clientX - r.left;
+    startY = e.clientY - r.top;
+    drawing = true;
+});
+
+canvas.addEventListener('mousemove', e => {
+    if (!drawing) return;
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    redraw();
+    ctx.strokeStyle = currentSlot === 0 ? '#4af' : '#fa4';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(startX, startY, x - startX, y - startY);
+});
+
+canvas.addEventListener('mouseup', e => {
+    if (!drawing) return;
+    drawing = false;
+
+    const r = canvas.getBoundingClientRect();
+    const endX = e.clientX - r.left;
+    const endY = e.clientY - r.top;
+
+    const x1 = Math.round(Math.min(startX, endX) / scale);
+    const y1 = Math.round(Math.min(startY, endY) / scale);
+    const x2 = Math.round(Math.max(startX, endX) / scale);
+    const y2 = Math.round(Math.max(startY, endY) / scale);
+
+    if (x2 - x1 < 5 || y2 - y1 < 5) return; // too small
+
+    boxes[currentSlot] = { x1, y1, x2, y2, label: null };
+    document.getElementById('hint-' + (currentSlot + 1)).textContent = 'Now select the face number';
+    document.getElementById('slot-' + (currentSlot + 1)).classList.remove('done');
+    enableNumbers(currentSlot);
+    updateSaveButton();
+    redraw();
+});
+
+function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const colors = ['#4af', '#fa4'];
+    boxes.forEach((box, i) => {
+        if (!box) return;
+        ctx.strokeStyle = colors[i];
+        ctx.lineWidth = 2;
+        ctx.strokeRect(box.x1 * scale, box.y1 * scale,
+                       (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale);
+        if (box.label) {
+            ctx.fillStyle = colors[i];
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(box.label, box.x1 * scale + 4, box.y1 * scale + 18);
+        }
+    });
+}
+
+function clearBoxes() {
+    boxes = [null, null];
+    currentSlot = 0;
+    [1, 2].forEach(s => {
+        document.getElementById('slot-' + s).classList.remove('active', 'done');
+        document.getElementById('hint-' + s).textContent = 'Draw a box around die ' + s;
+        document.getElementById('nums-' + s).querySelectorAll('.num-btn').forEach(b => {
+            b.disabled = true;
+            b.classList.remove('selected');
+        });
+    });
+    document.getElementById('slot-1').classList.add('active');
+    updateSaveButton();
+    redraw();
+}
+
+function setStatus(msg) {
+    document.getElementById('status').textContent = msg;
+}
+
+async function save() {
+    const payload = { boxes: boxes.filter(b => b && b.label) };
+    setStatus('Saving...');
+    const res = await fetch('/label/' + FILENAME, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    window.location.href = data.next;
+}
+
+async function skip() {
+    setStatus('Skipping...');
+    const res = await fetch('/label/' + FILENAME, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skip: true })
+    });
+    const data = await res.json();
+    window.location.href = data.next;
+}
+</script>
+{% endif %}
+</body>
+</html>
