@@ -1,4 +1,5 @@
 import concurrent.futures
+import random
 from io import BytesIO
 from PIL import Image
 import cv2
@@ -35,16 +36,23 @@ def _apply_roi(frame):
 
 def hardware_activation():
     pin = 6  # GPIO 6
-    roll_for = 0.3
 
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(pin, GPIO.OUT)
     try:
+        # Shake pattern: rapid pulses to agitate the dice
+        for _ in range(4):
+            GPIO.output(pin, GPIO.HIGH)
+            time.sleep(0.1)
+            GPIO.output(pin, GPIO.LOW)
+            time.sleep(0.05)
+
+        # Final push: random duration so dice lands differently each roll
+        roll_for = random.uniform(0.3, 0.7)
         GPIO.output(pin, GPIO.HIGH)
-        print(f"GPIO {pin} is ON")
+        print(f"GPIO {pin} rolling for {roll_for:.2f}s")
         time.sleep(roll_for)
         GPIO.output(pin, GPIO.LOW)
-        print(f"GPIO {pin} is OFF")
     finally:
         GPIO.cleanup()
 
