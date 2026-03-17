@@ -45,10 +45,9 @@ def hardware_activation():
             GPIO.output(pin, GPIO.HIGH)
             time.sleep(0.1)
             GPIO.output(pin, GPIO.LOW)
-            time.sleep(0.05)
 
         # Final push: random duration so dice lands differently each roll
-        roll_for = random.uniform(0.3, 0.7)
+        roll_for = random.uniform(0.1, 0.4)
         GPIO.output(pin, GPIO.HIGH)
         print(f"GPIO {pin} rolling for {roll_for:.2f}s")
         time.sleep(roll_for)
@@ -81,11 +80,11 @@ def generate_gif_from_images(image_list, gif_name):
 
 
 def roll_dice(uuid, folder, debug):
-    # Capture at 960x540 — fast enough for Pi, good enough for motion detection
+    # Capture at 1920x1080 for maximum ROI resolution after crop
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     # Flush camera buffer so we get fresh frames immediately
     for _ in range(5):
@@ -104,10 +103,11 @@ def roll_dice(uuid, folder, debug):
             continue
 
         frame = _apply_roi(frame)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Downscale only for motion detection — keeps the loop fast on Pi
+        small = cv2.resize(frame, (480, 270), interpolation=cv2.INTER_AREA)
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
 
         if last_frame_gray is not None:
-            # Frame difference is more robust than mean comparison
             diff = cv2.absdiff(gray, last_frame_gray)
             motion_score = np.mean(diff)
 
@@ -128,7 +128,7 @@ def roll_dice(uuid, folder, debug):
                 print(f"Motion stopped with {len(frames)} frames detected.")
                 break
 
-        last_frame_gray = gray
+        last_frame_gray = gray  # small (480x270) for fast comparison
 
     # Save detection frame at full ROI resolution (not the tiny GIF size)
     cv2.imwrite(f'{folder}/{uuid}.jpg', detection_frame)
