@@ -1,12 +1,18 @@
 #!/bin/bash
 # -------------------------
 # Script by Sandrini
-# Fix auto focus and exposure in webcam
+# Configure webcam for D20 detection
+# Tuned for WEBCAM PICHAU INDUS (fixed-focus, no exposure control)
 # -------------------------
-# Fix the focus for the distance
-v4l2-ctl -d /dev/video0 --set-ctrl=focus_automatic_continuous=0
-v4l2-ctl -d /dev/video0 --set-ctrl=focus_absolute=520
 
-# Fix zoom and exposure
-v4l2-ctl -d /dev/video0 --set-ctrl=zoom_absolute=100
-v4l2-ctl -d /dev/video0 --set-ctrl=auto_exposure=1
+# Lock white balance to avoid color shifts under artificial light
+v4l2-ctl -d /dev/video0 --set-ctrl=white_balance_automatic=0
+
+# Max sharpness for cleaner dice face edges
+v4l2-ctl -d /dev/video0 --set-ctrl=sharpness=2048
+
+# Disable backlight compensation (dice box has controlled lighting)
+v4l2-ctl -d /dev/video0 --set-ctrl=backlight_compensation=0
+
+# Set 50Hz power line frequency (Brazil uses 60Hz — change to 2 if flickering under artificial light)
+v4l2-ctl -d /dev/video0 --set-ctrl=power_line_frequency=2
