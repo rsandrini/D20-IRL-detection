@@ -27,12 +27,23 @@ if not ret:
     exit(1)
 
 print("Select the dice area with your mouse. Press SPACE/ENTER to confirm, C to retry.")
-roi = cv2.selectROI("Select dice area (SPACE to confirm)", frame, showCrosshair=True)
+
+# Scale down for display if frame is too large
+display_max_width = 1280
+scale = min(1.0, display_max_width / frame.shape[1])
+display = cv2.resize(frame, (0, 0), fx=scale, fy=scale) if scale < 1.0 else frame
+
+roi = cv2.selectROI("Select dice area (SPACE to confirm)", display, showCrosshair=True)
 cv2.destroyAllWindows()
 
 x, y, w, h = roi
 if w == 0 or h == 0:
     print("No area selected.")
 else:
+    # Scale coordinates back to original resolution
+    x = int(x / scale)
+    y = int(y / scale)
+    w = int(w / scale)
+    h = int(h / scale)
     print(f"\nPaste this into your .env file:")
     print(f"CAMERA_ROI={x},{y},{w},{h}")
