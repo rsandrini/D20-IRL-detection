@@ -82,6 +82,9 @@ def generate_gif_from_images(image_list, gif_name):
 
 def roll_dice(uuid, folder, debug):
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     last_mean = 0
     frames_recorded = 0  # Count of frames recorded for GIF
     frame_skip = 1  # Number of frames to skip between recordings
