@@ -45,6 +45,7 @@ def hardware_activation():
             GPIO.output(pin, GPIO.HIGH)
             time.sleep(0.1)
             GPIO.output(pin, GPIO.LOW)
+            time.sleep(0.5)
 
         # Final push: random duration so dice lands differently each roll
         roll_for = random.uniform(0.1, 0.4)

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Calibration</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #eee; display: flex; height: 100vh; overflow: hidden; }
+
+        #preview-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+            position: relative;
+        }
+
+        #canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        #sidebar {
+            width: 260px;
+            background: #2a2a2a;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow-y: auto;
+        }
+
+        h2 { font-size: 16px; color: #aaa; }
+        p { font-size: 13px; color: #888; line-height: 1.5; }
+
+        .info-box {
+            background: #333;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+        }
+        .info-box label { color: #aaa; display: block; margin-bottom: 4px; }
+        .info-box span { color: #4af; font-weight: bold; }
+
+        .btn {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+        }
+        .btn-save { background: #4c4; color: #000; }
+        .btn-save:disabled { background: #444; color: #888; cursor: default; }
+        .btn-clear { background: #555; color: #eee; }
+
+        #status { font-size: 12px; text-align: center; min-height: 18px; }
+        #status.ok { color: #4c4; }
+        #status.err { color: #c44; }
+
+        a { color: #4af; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div id="preview-area">
+    <canvas id="canvas"></canvas>
+</div>
+
+<div id="sidebar">
+    <div>
+        <h2>Camera Calibration</h2>
+        <p>Click and drag on the live feed to define the dice area. The ROI will be saved to .env.</p>
+    </div>
+
+    <div class="info-box">
+        <label>Camera resolution</label>
+        <span id="cam-res">1920 × 1080</span>
+    </div>
+
+    <div class="info-box">
+        <label>ROI (x, y, w, h)</label>
+        <span id="roi-display">{{ roi or 'not set' }}</span>
+    </div>
+
+    <div class="info-box">
+        <label>ROI resolution</label>
+        <span id="roi-res">—</span>
+    </div>
+
+    <div class="info-box">
+        <label>Dice coverage hint</label>
+        <span id="coverage">—</span>
+    </div>
+
+    <button class="btn btn-clear" onclick="clearROI()">Clear ROI</button>
+    <button class="btn btn-save" id="btn-save" onclick="saveROI()" disabled>Save to .env</button>
+    <div id="status"></div>
+    <a href="/">← Back to roll page</a>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Camera native resolution
+const CAM_W = 1920, CAM_H = 1080;
+
+// Display scale
+let scale = 1;
+
+// Stream image
+const img = new Image();
+let animFrame;
+
+function fitCanvas() {
+    const area = document.getElementById('preview-area');
+    scale = Math.min((area.clientWidth - 10) / CAM_W, (area.clientHeight - 10) / CAM_H);
+    canvas.width  = Math.round(CAM_W * scale);
+    canvas.height = Math.round(CAM_H * scale);
+}
+
+fitCanvas();
+window.addEventListener('resize', () => { fitCanvas(); redraw(); });
+
+// Live MJPEG via periodic snapshots (avoids browser MJPEG quirks)
+let lastSnapshot = null;
+
+function fetchFrame() {
+    const i = new Image();
+    i.onload = () => { lastSnapshot = i; redraw(); };
+    i.src = '/calibrate/stream/snapshot?' + Date.now();
+    setTimeout(fetchFrame, 100); // ~10fps
+}
+
+// Use MJPEG img tag approach instead — simpler
+const streamImg = new Image();
+streamImg.onload = () => { lastSnapshot = streamImg; };
+
+function refreshStream() {
+    const i = new Image();
+    i.onload = () => {
+        lastSnapshot = i;
+        redraw();
+        setTimeout(refreshStream, 80);
+    };
+    i.onerror = () => setTimeout(refreshStream, 500);
+    i.src = '/calibrate/snapshot?' + Date.now();
+}
+
+// ROI state (in original image coords)
+let roi = null;
+let drawing = false;
+let startX = 0, startY = 0;
+
+// Load existing ROI from server
+const existingRoi = "{{ roi }}";
+if (existingRoi) {
+    const parts = existingRoi.split(',').map(Number);
+    if (parts.length === 4) {
+        roi = { x: parts[0], y: parts[1], w: parts[2], h: parts[3] };
+        updateInfo();
+        document.getElementById('btn-save').disabled = false;
+    }
+}
+
+function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (lastSnapshot) ctx.drawImage(lastSnapshot, 0, 0, canvas.width, canvas.height);
+
+    if (roi) {
+        ctx.strokeStyle = '#4af';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(roi.x * scale, roi.y * scale, roi.w * scale, roi.h * scale);
+
+        // Dim outside ROI
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fillRect(0, 0, canvas.width, roi.y * scale);
+        ctx.fillRect(0, (roi.y + roi.h) * scale, canvas.width, canvas.height);
+        ctx.fillRect(0, roi.y * scale, roi.x * scale, roi.h * scale);
+        ctx.fillRect((roi.x + roi.w) * scale, roi.y * scale, canvas.width, roi.h * scale);
+
+        ctx.strokeStyle = '#4af';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(roi.x * scale, roi.y * scale, roi.w * scale, roi.h * scale);
+    }
+}
+
+canvas.addEventListener('mousedown', e => {
+    const r = canvas.getBoundingClientRect();
+    startX = (e.clientX - r.left) / scale;
+    startY = (e.clientY - r.top) / scale;
+    drawing = true;
+    roi = null;
+    document.getElementById('btn-save').disabled = true;
+});
+
+canvas.addEventListener('mousemove', e => {
+    if (!drawing) return;
+    const r = canvas.getBoundingClientRect();
+    const cx = (e.clientX - r.left) / scale;
+    const cy = (e.clientY - r.top) / scale;
+    roi = {
+        x: Math.round(Math.min(startX, cx)),
+        y: Math.round(Math.min(startY, cy)),
+        w: Math.round(Math.abs(cx - startX)),
+        h: Math.round(Math.abs(cy - startY))
+    };
+    redraw();
+    updateInfo();
+});
+
+canvas.addEventListener('mouseup', e => {
+    if (!drawing) return;
+    drawing = false;
+    if (roi && roi.w > 10 && roi.h > 10) {
+        document.getElementById('btn-save').disabled = false;
+        updateInfo();
+    } else {
+        roi = null;
+    }
+});
+
+function updateInfo() {
+    if (!roi) return;
+    document.getElementById('roi-display').textContent = `${roi.x}, ${roi.y}, ${roi.w}, ${roi.h}`;
+    document.getElementById('roi-res').textContent = `${roi.w} × ${roi.h} px`;
+
+    // Coverage hint: assume dice ~30mm, bowl ~200mm → dice ~15% of bowl area
+    const area = roi.w * roi.h;
+    const camArea = CAM_W * CAM_H;
+    const pct = ((area / camArea) * 100).toFixed(1);
+    const hint = roi.w < 300 ? '⚠ Very tight — dice may clip edges'
+               : roi.w > 1200 ? '⚠ Wide crop — dice will be small'
+               : '✓ Good crop size';
+    document.getElementById('coverage').textContent = `${roi.w}×${roi.h} (${pct}% of frame) — ${hint}`;
+}
+
+function clearROI() {
+    roi = null;
+    document.getElementById('roi-display').textContent = 'not set';
+    document.getElementById('roi-res').textContent = '—';
+    document.getElementById('coverage').textContent = '—';
+    document.getElementById('btn-save').disabled = true;
+    redraw();
+}
+
+async function saveROI() {
+    const roiStr = roi ? `${roi.x},${roi.y},${roi.w},${roi.h}` : '';
+    const res = await fetch('/calibrate/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roi: roiStr })
+    });
+    const data = await res.json();
+    const el = document.getElementById('status');
+    if (data.status === 'ok') {
+        el.textContent = '✓ Saved to .env';
+        el.className = 'ok';
+    } else {
+        el.textContent = 'Error saving';
+        el.className = 'err';
+    }
+    setTimeout(() => el.textContent = '', 3000);
+}
+
+// Start live preview
+refreshStream();
+setInterval(redraw, 80);
+</script>
+</body>
+</html>

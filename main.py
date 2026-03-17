@@ -4,10 +4,13 @@ import uuid
 import requests
 import glob
 import shutil
+import threading
+import time as _time
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 import cv2
-from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory
+import numpy as np
+from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory, Response
 from object_detection import ObjectDetector
 from dice import *
 
@@ -163,6 +166,82 @@ def label_save(filename):
     if pending:
         return jsonify({"next": url_for('label_image', filename=os.path.basename(pending[0]))})
     return jsonify({"next": url_for('label_index')})
+
+
+def _camera_stream():
+    """MJPEG stream for live calibration preview."""
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                continue
+            _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
+    finally:
+        cap.release()
+
+
+@app.route('/calibrate')
+def calibrate():
+    return render_template('calibrate.html', roi=os.getenv('CAMERA_ROI', ''))
+
+
+@app.route('/calibrate/stream')
+def calibrate_stream():
+    return Response(_camera_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/calibrate/snapshot')
+def calibrate_snapshot():
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    for _ in range(3):
+        cap.read()
+    ret, frame = cap.read()
+    cap.release()
+    if not ret:
+        return '', 503
+    _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    return Response(jpeg.tobytes(), mimetype='image/jpeg')
+
+
+@app.route('/calibrate/save', methods=['POST'])
+def calibrate_save():
+    roi = request.json.get('roi', '')
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+
+    # Read existing .env
+    lines = []
+    if os.path.exists(env_path):
+        with open(env_path) as f:
+            lines = f.readlines()
+
+    # Update or append CAMERA_ROI
+    key = 'CAMERA_ROI'
+    updated = False
+    for i, line in enumerate(lines):
+        if line.startswith(key + '=') or line.startswith(key + ' ='):
+            lines[i] = f"{key}='{roi}'\n"
+            updated = True
+            break
+    if not updated:
+        lines.append(f"{key}='{roi}'\n")
+
+    with open(env_path, 'w') as f:
+        f.writelines(lines)
+
+    # Reload in current process
+    os.environ['CAMERA_ROI'] = roi
+    import dice
+    dice.CAMERA_ROI = dice._parse_roi()
+
+    return jsonify({'status': 'ok', 'roi': roi})
 
 
 if __name__ == '__main__':
