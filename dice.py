@@ -6,6 +6,29 @@ import numpy as np
 import os
 import RPi.GPIO as GPIO
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def _parse_roi():
+    raw = os.getenv("CAMERA_ROI", "").strip()
+    if not raw:
+        return None
+    try:
+        x, y, w, h = [int(v) for v in raw.split(",")]
+        return (x, y, w, h)
+    except ValueError:
+        print(f"WARNING: Invalid CAMERA_ROI value '{raw}', ignoring.")
+        return None
+
+CAMERA_ROI = _parse_roi()
+
+
+def _apply_roi(frame):
+    if CAMERA_ROI is None:
+        return frame
+    x, y, w, h = CAMERA_ROI
+    return frame[y:y+h, x:x+w]
 
 
 def hardware_activation():
@@ -70,6 +93,7 @@ def roll_dice(uuid, folder, debug):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         while True:
             ret, frame = cap.read()
+            frame = _apply_roi(frame)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             result = np.abs(np.mean(gray) - last_mean)
             last_mean = np.mean(gray)
