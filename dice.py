@@ -41,11 +41,11 @@ def hardware_activation():
     GPIO.setup(pin, GPIO.OUT)
     try:
         # Shake pattern: rapid pulses to agitate the dice
-        for _ in range(4):
+        for _ in range(2):
             GPIO.output(pin, GPIO.HIGH)
             time.sleep(0.1)
             GPIO.output(pin, GPIO.LOW)
-            time.sleep(0.5)
+            time.sleep(0.3)
 
         # Final push: random duration so dice lands differently each roll
         roll_for = random.uniform(0.1, 0.4)
