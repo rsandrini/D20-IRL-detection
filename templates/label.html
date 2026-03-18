@@ -116,6 +116,56 @@
         }
         #num-popup .num-btn:hover { background: #4af; color: #000; }
         #num-popup.die2 .num-btn:hover { background: #fa4; color: #000; }
+
+        /* Confirm popup after both dice labeled */
+        #confirm-popup {
+            position: fixed;
+            display: none;
+            background: #222;
+            border: 2px solid #4c4;
+            border-radius: 10px;
+            padding: 12px 14px;
+            z-index: 101;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+            text-align: center;
+            min-width: 160px;
+        }
+        #confirm-popup .confirm-title {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        #confirm-popup .confirm-dice {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #eee;
+        }
+        #confirm-popup .confirm-btns {
+            display: flex;
+            gap: 8px;
+        }
+        #confirm-popup .btn-confirm-save {
+            flex: 1;
+            padding: 8px;
+            background: #4c4;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        #confirm-popup .btn-confirm-clear {
+            flex: 1;
+            padding: 8px;
+            background: #555;
+            color: #eee;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -130,6 +180,16 @@
 
 <div id="canvas-area">
     <canvas id="canvas"></canvas>
+</div>
+
+<!-- Confirm popup after both dice labeled -->
+<div id="confirm-popup">
+    <div class="confirm-title">Confirm labels</div>
+    <div class="confirm-dice" id="confirm-dice"></div>
+    <div class="confirm-btns">
+        <button class="btn-confirm-save" onclick="save()">Save & Next</button>
+        <button class="btn-confirm-clear" onclick="clearBoxes()">Clear</button>
+    </div>
 </div>
 
 <!-- Floating number picker, appears near click -->
@@ -196,6 +256,36 @@ img.onload = () => {
 const popup = document.getElementById('num-popup');
 const popupNums = document.getElementById('popup-nums');
 const popupTitle = document.getElementById('popup-title');
+const confirmPopup = document.getElementById('confirm-popup');
+
+let lastClickX = 0, lastClickY = 0;
+
+function showConfirm() {
+    const d1 = boxes[0] ? boxes[0].label : null;
+    const d2 = boxes[1] ? boxes[1].label : null;
+    document.getElementById('confirm-dice').textContent =
+        d2 ? `Die 1: ${d1}   Die 2: ${d2}` : `Die 1: ${d1}`;
+
+    confirmPopup.style.display = 'block';
+
+    const pw = confirmPopup.offsetWidth  || 170;
+    const ph = confirmPopup.offsetHeight || 110;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let left = lastClickX + 16;
+    let top  = lastClickY - ph / 2;
+    if (left + pw > vw - 8) left = lastClickX - pw - 16;
+    if (top < 8) top = 8;
+    if (top + ph > vh - 8) top = vh - ph - 8;
+
+    confirmPopup.style.left = left + 'px';
+    confirmPopup.style.top  = top  + 'px';
+}
+
+function hideConfirm() {
+    confirmPopup.style.display = 'none';
+}
 
 function buildPopup() {
     popupNums.innerHTML = '';
@@ -258,6 +348,10 @@ function selectNumber(slotIdx, num) {
         currentSlot = 1;
         document.getElementById('slot-1').classList.remove('active');
         document.getElementById('slot-2').classList.add('active');
+    } else if (slotIdx === 1) {
+        // Both dice labeled — show confirm
+        currentSlot = 2;
+        showConfirm();
     }
 
     updateSaveButton();
@@ -289,6 +383,8 @@ canvas.addEventListener('mouseleave', redraw);
 // Single click — place box then open popup
 canvas.addEventListener('click', e => {
     if (currentSlot > 1) return;
+    lastClickX = e.clientX;
+    lastClickY = e.clientY;
 
     const r = canvas.getBoundingClientRect();
     const cx = (e.clientX - r.left) / scale;
@@ -333,6 +429,7 @@ function clearBoxes() {
     boxes = [null, null];
     currentSlot = 0;
     hidePopup();
+    hideConfirm();
     [1, 2].forEach(s => {
         document.getElementById('slot-' + s).classList.remove('active', 'done');
         document.getElementById('hint-' + s).textContent = 'Click on die ' + s;
