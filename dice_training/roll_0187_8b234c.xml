@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<annotation>
+	<folder>dice_training</folder>
+	<filename>roll_0187_8b234c.jpg</filename>
+	<path>dice_training/roll_0187_8b234c.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>449</width>
+		<height>464</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>2</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>352</xmin>
+			<ymin>204</ymin>
+			<xmax>449</xmax>
+			<ymax>304</ymax>
+		</bndbox>
+	</object>
+</annotation>
