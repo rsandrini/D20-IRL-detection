@@ -13,6 +13,11 @@ class ObjectDetector:
         self.min_conf_threshold = 0.3
         self.nms_threshold = 0.45
         self.labels = [str(i) for i in range(1, 21)]
+        self.interpreter = None
+        model_path = os.path.join(self.model_dir, "detect.tflite")
+        if not os.path.exists(model_path):
+            print(f"WARNING: No model found at '{model_path}'. Detection disabled until model is deployed.")
+            return
         self.load_model()
 
     def load_model(self):
@@ -34,6 +39,8 @@ class ObjectDetector:
         return (input_data.astype(np.float32) / 255.0)
 
     def detect_objects(self, image_path, image_name):
+        if self.interpreter is None:
+            return []
         image_path_file = os.path.join(image_path, image_name)
         image = cv2.imread(image_path_file)
         imH, imW = image.shape[:2]
