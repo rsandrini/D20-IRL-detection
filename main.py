@@ -142,7 +142,8 @@ def label_image(filename):
     return render_template('label.html',
                            filename=filename,
                            total=total_labeled + len(pending),
-                           remaining=len(pending))
+                           remaining=len(pending),
+                           box_size=int(os.getenv('LABEL_BOX_SIZE', 100)))
 
 
 @app.route('/label/<filename>', methods=['POST'])

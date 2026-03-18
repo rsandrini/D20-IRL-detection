@@ -25,12 +25,11 @@
             padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             overflow-y: auto;
         }
 
         h2 { font-size: 16px; color: #aaa; }
-
         .progress { font-size: 13px; color: #888; }
 
         .box-slot {
@@ -41,8 +40,7 @@
         }
         .box-slot.active { border-color: #4af; }
         .box-slot.done { border-color: #4c4; }
-
-        .box-slot h3 { font-size: 14px; margin-bottom: 8px; }
+        .box-slot h3 { font-size: 14px; margin-bottom: 6px; }
         .box-slot .hint { font-size: 12px; color: #888; margin-bottom: 8px; }
 
         .num-grid {
@@ -50,7 +48,6 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 4px;
         }
-
         .num-btn {
             background: #444;
             border: none;
@@ -63,6 +60,25 @@
         .num-btn:hover { background: #4af; color: #000; }
         .num-btn.selected { background: #4af; color: #000; font-weight: bold; }
         .num-btn:disabled { opacity: 0.3; cursor: default; }
+
+        .box-size-row {
+            background: #333;
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .box-size-row label { font-size: 12px; color: #aaa; white-space: nowrap; }
+        .box-size-row input[type=number] {
+            width: 64px;
+            background: #444;
+            border: 1px solid #555;
+            color: #eee;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
 
         .btn {
             padding: 10px;
@@ -79,7 +95,6 @@
         .btn-clear { background: #555; color: #eee; font-size: 12px; padding: 6px; }
 
         #status { font-size: 12px; color: #888; text-align: center; }
-
         #done-msg { text-align: center; padding: 40px; }
         #done-msg h1 { color: #4c4; margin-bottom: 16px; }
         #done-msg a { color: #4af; }
@@ -105,19 +120,25 @@
         <div class="progress">{{ remaining }} remaining of {{ total }} total</div>
     </div>
 
+    <div class="box-size-row">
+        <label>Box size (px)</label>
+        <input type="number" id="box-size" min="20" max="600" value="{{ box_size }}"
+               oninput="redraw();">
+    </div>
+
     <div class="box-slot active" id="slot-1">
         <h3>Die 1</h3>
-        <div class="hint" id="hint-1">Draw a box around die 1</div>
+        <div class="hint" id="hint-1">Click on die 1</div>
         <div class="num-grid" id="nums-1"></div>
     </div>
 
     <div class="box-slot" id="slot-2">
         <h3>Die 2 <span style="font-weight:normal;color:#888;font-size:12px">(optional)</span></h3>
-        <div class="hint" id="hint-2">Draw a box around die 2</div>
+        <div class="hint" id="hint-2">Click on die 2</div>
         <div class="num-grid" id="nums-2"></div>
     </div>
 
-    <button class="btn btn-clear" onclick="clearBoxes()">Clear boxes</button>
+    <button class="btn btn-clear" onclick="clearBoxes()">Clear</button>
     <button class="btn btn-save" id="btn-save" disabled onclick="save()">Save & Next</button>
     <button class="btn btn-skip" onclick="skip()">Skip</button>
     <div id="status"></div>
@@ -133,19 +154,16 @@ img.src = '/to_label/' + FILENAME;
 
 let scale = 1;
 let imgW = 0, imgH = 0;
-
-// boxes[i] = {x1,y1,x2,y2,label} in original image coords
 let boxes = [null, null];
-let currentSlot = 0; // 0 or 1
-let drawing = false;
-let startX = 0, startY = 0;
+let currentSlot = 0;
+
+const sizeInput = document.getElementById('box-size');
+function getBoxHalf() { return Math.round(parseInt(sizeInput.value) / 2 / scale); }
 
 img.onload = () => {
     const area = document.getElementById('canvas-area');
-    const maxW = area.clientWidth - 20;
-    const maxH = area.clientHeight - 20;
-    scale = Math.min(maxW / img.width, maxH / img.height, 1);
-    canvas.width = Math.round(img.width * scale);
+    scale = Math.min((area.clientWidth - 20) / img.width, (area.clientHeight - 20) / img.height, 1);
+    canvas.width  = Math.round(img.width * scale);
     canvas.height = Math.round(img.height * scale);
     imgW = img.width;
     imgH = img.height;
@@ -166,8 +184,8 @@ img.onload = () => {
 });
 
 function enableNumbers(slotIdx) {
-    const grid = document.getElementById('nums-' + (slotIdx + 1));
-    grid.querySelectorAll('.num-btn').forEach(b => b.disabled = false);
+    document.getElementById('nums-' + (slotIdx + 1))
+        .querySelectorAll('.num-btn').forEach(b => b.disabled = false);
 }
 
 function selectNumber(slotIdx, num) {
@@ -182,7 +200,6 @@ function selectNumber(slotIdx, num) {
     document.getElementById('slot-' + (slotIdx + 1)).classList.add('done');
     document.getElementById('hint-' + (slotIdx + 1)).textContent = 'Face: ' + num + ' ✓';
 
-    // Move focus to next slot if slot 0 just got labeled
     if (slotIdx === 0 && !boxes[1]) {
         currentSlot = 1;
         document.getElementById('slot-1').classList.remove('active');
@@ -194,42 +211,39 @@ function selectNumber(slotIdx, num) {
 }
 
 function updateSaveButton() {
-    const ready = boxes[0] && boxes[0].label;
-    document.getElementById('btn-save').disabled = !ready;
+    document.getElementById('btn-save').disabled = !(boxes[0] && boxes[0].label);
 }
 
-canvas.addEventListener('mousedown', e => {
-    const r = canvas.getBoundingClientRect();
-    startX = e.clientX - r.left;
-    startY = e.clientY - r.top;
-    drawing = true;
-});
-
+// Show box preview on hover
 canvas.addEventListener('mousemove', e => {
-    if (!drawing) return;
+    if (boxes[0] && boxes[1]) return; // both placed
     const r = canvas.getBoundingClientRect();
-    const x = e.clientX - r.left;
-    const y = e.clientY - r.top;
+    const cx = e.clientX - r.left;
+    const cy = e.clientY - r.top;
+    const half = parseInt(sizeInput.value) / 2;
     redraw();
-    ctx.strokeStyle = currentSlot === 0 ? '#4af' : '#fa4';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(startX, startY, x - startX, y - startY);
+    ctx.strokeStyle = currentSlot === 0 ? 'rgba(68,170,255,0.6)' : 'rgba(255,170,68,0.6)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(cx - half, cy - half, half * 2, half * 2);
+    ctx.setLineDash([]);
 });
 
-canvas.addEventListener('mouseup', e => {
-    if (!drawing) return;
-    drawing = false;
+canvas.addEventListener('mouseleave', redraw);
+
+// Single click places a fixed-size box
+canvas.addEventListener('click', e => {
+    if (currentSlot > 1) return;
 
     const r = canvas.getBoundingClientRect();
-    const endX = e.clientX - r.left;
-    const endY = e.clientY - r.top;
+    const cx = (e.clientX - r.left) / scale;
+    const cy = (e.clientY - r.top) / scale;
+    const half = getBoxHalf();
 
-    const x1 = Math.round(Math.min(startX, endX) / scale);
-    const y1 = Math.round(Math.min(startY, endY) / scale);
-    const x2 = Math.round(Math.max(startX, endX) / scale);
-    const y2 = Math.round(Math.max(startY, endY) / scale);
-
-    if (x2 - x1 < 5 || y2 - y1 < 5) return; // too small
+    const x1 = Math.max(0, Math.round(cx - half));
+    const y1 = Math.max(0, Math.round(cy - half));
+    const x2 = Math.min(imgW, Math.round(cx + half));
+    const y2 = Math.min(imgH, Math.round(cy + half));
 
     boxes[currentSlot] = { x1, y1, x2, y2, label: null };
     document.getElementById('hint-' + (currentSlot + 1)).textContent = 'Now select the face number';
@@ -248,6 +262,7 @@ function redraw() {
         if (!box) return;
         ctx.strokeStyle = colors[i];
         ctx.lineWidth = 2;
+        ctx.setLineDash([]);
         ctx.strokeRect(box.x1 * scale, box.y1 * scale,
                        (box.x2 - box.x1) * scale, (box.y2 - box.y1) * scale);
         if (box.label) {
@@ -263,7 +278,7 @@ function clearBoxes() {
     currentSlot = 0;
     [1, 2].forEach(s => {
         document.getElementById('slot-' + s).classList.remove('active', 'done');
-        document.getElementById('hint-' + s).textContent = 'Draw a box around die ' + s;
+        document.getElementById('hint-' + s).textContent = 'Click on die ' + s;
         document.getElementById('nums-' + s).querySelectorAll('.num-btn').forEach(b => {
             b.disabled = true;
             b.classList.remove('selected');
@@ -274,31 +289,24 @@ function clearBoxes() {
     redraw();
 }
 
-function setStatus(msg) {
-    document.getElementById('status').textContent = msg;
-}
-
 async function save() {
-    const payload = { boxes: boxes.filter(b => b && b.label) };
-    setStatus('Saving...');
+    document.getElementById('status').textContent = 'Saving...';
     const res = await fetch('/label/' + FILENAME, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ boxes: boxes.filter(b => b && b.label) })
     });
-    const data = await res.json();
-    window.location.href = data.next;
+    window.location.href = (await res.json()).next;
 }
 
 async function skip() {
-    setStatus('Skipping...');
+    document.getElementById('status').textContent = 'Skipping...';
     const res = await fetch('/label/' + FILENAME, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skip: true })
     });
-    const data = await res.json();
-    window.location.href = data.next;
+    window.location.href = (await res.json()).next;
 }
 </script>
 {% endif %}
