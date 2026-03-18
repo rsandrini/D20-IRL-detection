@@ -20,7 +20,7 @@
         canvas { cursor: crosshair; display: block; }
 
         #sidebar {
-            width: 260px;
+            width: 200px;
             background: #2a2a2a;
             padding: 16px;
             display: flex;
@@ -35,31 +35,13 @@
         .box-slot {
             background: #333;
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px 12px;
             border: 2px solid transparent;
+            font-size: 13px;
         }
         .box-slot.active { border-color: #4af; }
         .box-slot.done { border-color: #4c4; }
-        .box-slot h3 { font-size: 14px; margin-bottom: 6px; }
-        .box-slot .hint { font-size: 12px; color: #888; margin-bottom: 8px; }
-
-        .num-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
-        }
-        .num-btn {
-            background: #444;
-            border: none;
-            color: #eee;
-            padding: 6px 0;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .num-btn:hover { background: #4af; color: #000; }
-        .num-btn.selected { background: #4af; color: #000; font-weight: bold; }
-        .num-btn:disabled { opacity: 0.3; cursor: default; }
+        .box-slot .hint { font-size: 12px; color: #888; margin-top: 4px; }
 
         .box-size-row {
             background: #333;
@@ -98,6 +80,42 @@
         #done-msg { text-align: center; padding: 40px; }
         #done-msg h1 { color: #4c4; margin-bottom: 16px; }
         #done-msg a { color: #4af; }
+
+        /* Floating number picker popup */
+        #num-popup {
+            position: fixed;
+            display: none;
+            background: #222;
+            border: 2px solid #4af;
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 100;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+        }
+        #num-popup.die2 { border-color: #fa4; }
+        #num-popup .popup-title {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        #num-popup .num-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+        #num-popup .num-btn {
+            background: #444;
+            border: none;
+            color: #eee;
+            padding: 8px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 40px;
+        }
+        #num-popup .num-btn:hover { background: #4af; color: #000; }
+        #num-popup.die2 .num-btn:hover { background: #fa4; color: #000; }
     </style>
 </head>
 <body>
@@ -114,28 +132,32 @@
     <canvas id="canvas"></canvas>
 </div>
 
+<!-- Floating number picker, appears near click -->
+<div id="num-popup">
+    <div class="popup-title" id="popup-title">Die 1 — select face</div>
+    <div class="num-grid" id="popup-nums"></div>
+</div>
+
 <div id="sidebar">
     <div>
-        <h2>Label Training Image</h2>
-        <div class="progress">{{ remaining }} remaining of {{ total }} total</div>
+        <h2>Label Image</h2>
+        <div class="progress">{{ remaining }} left of {{ total }}</div>
     </div>
 
     <div class="box-size-row">
-        <label>Box size (px)</label>
+        <label>Box px</label>
         <input type="number" id="box-size" min="20" max="600" value="{{ box_size }}"
                oninput="redraw();">
     </div>
 
     <div class="box-slot active" id="slot-1">
-        <h3>Die 1</h3>
+        <strong>Die 1</strong>
         <div class="hint" id="hint-1">Click on die 1</div>
-        <div class="num-grid" id="nums-1"></div>
     </div>
 
     <div class="box-slot" id="slot-2">
-        <h3>Die 2 <span style="font-weight:normal;color:#888;font-size:12px">(optional)</span></h3>
+        <strong>Die 2 <span style="font-weight:normal;color:#888;font-size:11px">(optional)</span></strong>
         <div class="hint" id="hint-2">Click on die 2</div>
-        <div class="num-grid" id="nums-2"></div>
     </div>
 
     <button class="btn btn-clear" onclick="clearBoxes()">Clear</button>
@@ -170,32 +192,64 @@ img.onload = () => {
     redraw();
 };
 
-// Build number grids
-[1, 2].forEach(slot => {
-    const grid = document.getElementById('nums-' + slot);
+// --- Popup picker ---
+const popup = document.getElementById('num-popup');
+const popupNums = document.getElementById('popup-nums');
+const popupTitle = document.getElementById('popup-title');
+
+function buildPopup() {
+    popupNums.innerHTML = '';
     for (let n = 1; n <= 20; n++) {
         const btn = document.createElement('button');
         btn.className = 'num-btn';
         btn.textContent = n;
-        btn.disabled = true;
-        btn.onclick = () => selectNumber(slot - 1, n);
-        grid.appendChild(btn);
+        btn.onclick = () => {
+            selectNumber(currentSlot, n);
+            hidePopup();
+        };
+        popupNums.appendChild(btn);
     }
-});
+}
+buildPopup();
 
-function enableNumbers(slotIdx) {
-    document.getElementById('nums-' + (slotIdx + 1))
-        .querySelectorAll('.num-btn').forEach(b => b.disabled = false);
+function showPopup(clientX, clientY, slotIdx) {
+    popup.className = slotIdx === 1 ? 'die2' : '';
+    popupTitle.textContent = (slotIdx === 0 ? 'Die 1' : 'Die 2') + ' — select face';
+
+    popup.style.display = 'block';
+
+    // Position near click, keeping inside viewport
+    const pw = popup.offsetWidth  || 230;
+    const ph = popup.offsetHeight || 180;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let left = clientX + 16;
+    let top  = clientY - ph / 2;
+
+    if (left + pw > vw - 8) left = clientX - pw - 16;
+    if (top < 8) top = 8;
+    if (top + ph > vh - 8) top = vh - ph - 8;
+
+    popup.style.left = left + 'px';
+    popup.style.top  = top  + 'px';
 }
 
+function hidePopup() {
+    popup.style.display = 'none';
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', e => {
+    if (popup.style.display === 'block' && !popup.contains(e.target) && e.target !== canvas) {
+        hidePopup();
+    }
+}, true);
+
+// --- Box placement ---
 function selectNumber(slotIdx, num) {
     if (!boxes[slotIdx]) return;
     boxes[slotIdx].label = num;
-
-    const grid = document.getElementById('nums-' + (slotIdx + 1));
-    grid.querySelectorAll('.num-btn').forEach(b => {
-        b.classList.toggle('selected', parseInt(b.textContent) === num);
-    });
 
     document.getElementById('slot-' + (slotIdx + 1)).classList.add('done');
     document.getElementById('hint-' + (slotIdx + 1)).textContent = 'Face: ' + num + ' ✓';
@@ -216,7 +270,8 @@ function updateSaveButton() {
 
 // Show box preview on hover
 canvas.addEventListener('mousemove', e => {
-    if (boxes[0] && boxes[1]) return; // both placed
+    if (popup.style.display === 'block') return;
+    if (currentSlot > 1) return;
     const r = canvas.getBoundingClientRect();
     const cx = e.clientX - r.left;
     const cy = e.clientY - r.top;
@@ -231,7 +286,7 @@ canvas.addEventListener('mousemove', e => {
 
 canvas.addEventListener('mouseleave', redraw);
 
-// Single click places a fixed-size box
+// Single click — place box then open popup
 canvas.addEventListener('click', e => {
     if (currentSlot > 1) return;
 
@@ -246,11 +301,12 @@ canvas.addEventListener('click', e => {
     const y2 = Math.min(imgH, Math.round(cy + half));
 
     boxes[currentSlot] = { x1, y1, x2, y2, label: null };
-    document.getElementById('hint-' + (currentSlot + 1)).textContent = 'Now select the face number';
+    document.getElementById('hint-' + (currentSlot + 1)).textContent = 'Select the face number';
     document.getElementById('slot-' + (currentSlot + 1)).classList.remove('done');
-    enableNumbers(currentSlot);
     updateSaveButton();
     redraw();
+
+    showPopup(e.clientX, e.clientY, currentSlot);
 });
 
 function redraw() {
@@ -276,13 +332,10 @@ function redraw() {
 function clearBoxes() {
     boxes = [null, null];
     currentSlot = 0;
+    hidePopup();
     [1, 2].forEach(s => {
         document.getElementById('slot-' + s).classList.remove('active', 'done');
         document.getElementById('hint-' + s).textContent = 'Click on die ' + s;
-        document.getElementById('nums-' + s).querySelectorAll('.num-btn').forEach(b => {
-            b.disabled = true;
-            b.classList.remove('selected');
-        });
     });
     document.getElementById('slot-1').classList.add('active');
     updateSaveButton();
