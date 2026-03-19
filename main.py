@@ -32,7 +32,7 @@ db.init_db()
 
 # Print local token to console for first-time setup
 _local = db.get_user("local")
-if _local and _local.get("token"):
+if _local and _local["token"]:
     print(f"\n  Local user token: {_local['token']}\n")
 
 
