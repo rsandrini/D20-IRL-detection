@@ -117,7 +117,7 @@ def generate_gif_from_images(image_list, gif_name):
     print(f"GIF saved at: {gif_name}")
 
 
-def roll_dice(uuid, folder, debug):
+def roll_dice(uuid, folder):
     cap = _get_cap()
 
     # Flush stale frames from the buffer (camera was idle between rolls).
@@ -202,17 +202,13 @@ def roll_dice(uuid, folder, debug):
     # Save detection frame at full ROI resolution (not the tiny GIF size)
     cv2.imwrite(f'{folder}/{uuid}.jpg', detection_frame)
 
-    if debug and len(frames) > 1:
-        start = time.time()
-        generate_gif_from_images(process_frames(frames), f'{folder}/{uuid}.gif')
-        print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
-
     print("Finishing...")
     # Camera stays open — no cap.release()
+    return frames, detection_frame.shape  # (H, W, C) — used by caller for GIF generation
 
 
 if __name__ == "__main__":
     RESULT_FOLDER = "results"
     uuid = "unique_id"
-    roll_dice(uuid, RESULT_FOLDER, debug=False)
+    roll_dice(uuid, RESULT_FOLDER)
     release_camera()

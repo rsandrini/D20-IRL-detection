@@ -207,6 +207,33 @@ def admin_required(f):
     return decorated
 
 
+def _blur_nonselected(frames, detections, selected, det_shape):
+    """Blur non-selected dice regions in all GIF frames.
+    Frames are 320x240 RGB; bboxes are in detection-frame pixel coords."""
+    if not detections or not selected or not det_shape or len(detections) < 2:
+        return frames
+    H_det, W_det = det_shape[:2]
+    if W_det == 0 or H_det == 0:
+        return frames
+    x_scale = 320 / W_det
+    y_scale = 240 / H_det
+    blur_bboxes = [
+        [max(0, int(d["bbox"][0] * x_scale)), max(0, int(d["bbox"][1] * y_scale)),
+         min(320, int(d["bbox"][2] * x_scale)), min(240, int(d["bbox"][3] * y_scale))]
+        for d in detections if d is not selected and d.get("bbox")
+    ]
+    if not blur_bboxes:
+        return frames
+    result = []
+    for frame in frames:
+        f = frame.copy()
+        for x1, y1, x2, y2 in blur_bboxes:
+            if x2 > x1 and y2 > y1:
+                f[y1:y2, x1:x2] = cv2.GaussianBlur(f[y1:y2, x1:x2], (51, 51), 0)
+        result.append(f)
+    return result
+
+
 def _do_roll(user_id, mode, debug):
     """Core roll + detect logic. Returns (response_dict, http_status)."""
     max_retries = int(os.getenv("MAX_RETRIES", 3))
@@ -214,12 +241,13 @@ def _do_roll(user_id, mode, debug):
     request_uuid = str(uuid.uuid4())
     time_elapsed_detection = 0
     detections = []
+    frames, det_shape = [], None
 
     need = 2 if mode in ("advantage", "disadvantage") else 1
     got_enough = False
 
     for _ in range(max_retries):
-        roll_dice(request_uuid, RESULT_FOLDER, debug)
+        frames, det_shape = roll_dice(request_uuid, RESULT_FOLDER)
         if detector.interpreter is None:
             got_enough = True   # no model — don't retry, just proceed
             break
@@ -254,6 +282,12 @@ def _do_roll(user_id, mode, debug):
             image_path = crop_path
 
     gif_path = f"{RESULT_FOLDER}/{request_uuid}.gif"
+    if debug and len(frames) > 1:
+        t = _time.time()
+        gif_frames = _blur_nonselected(frames, detections, selected, det_shape)
+        generate_gif_from_images(process_frames(gif_frames), gif_path)
+        print(f"GIF generated in {_time.time() - t:.2f}s")
+
     time_elapsed = round(_time.time() - start_time, 2)
     time_elapsed_detection = round(time_elapsed_detection, 2)
 
