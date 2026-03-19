@@ -30,13 +30,6 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
 detector = ObjectDetector(MODEL_FOLDER)
 db.init_db()
 
-# Pre-open the camera so the first roll doesn't pay the init cost.
-# Skipped on non-Pi environments where the camera isn't available.
-try:
-    import dice as _dice_mod
-    _dice_mod._get_cap()
-except Exception as _cam_err:
-    print(f"Camera pre-init skipped: {_cam_err}")
 
 
 # ---------------------------------------------------------------------------

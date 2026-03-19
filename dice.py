@@ -38,14 +38,22 @@ def _get_cap():
     global _cap
     if _cap is not None and _cap.isOpened():
         return _cap
+    # Release any stale handle before reinitializing
+    if _cap is not None:
+        _cap.release()
+        _cap = None
     print("Initializing camera...")
-    _cap = cv2.VideoCapture(0)
-    _cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    _cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    _cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    if not cap.isOpened():
+        cap.release()
+        raise RuntimeError("Camera failed to open at index 0")
     # Drain stale frames after a fresh open
     for _ in range(5):
-        _cap.read()
+        cap.read()
+    _cap = cap
     return _cap
 
 
