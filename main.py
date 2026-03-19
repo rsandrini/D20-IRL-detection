@@ -284,7 +284,7 @@ def _do_roll(user_id, mode, debug):
     gif_path = f"{RESULT_FOLDER}/{request_uuid}.gif"
     if debug and len(frames) > 1:
         t = _time.time()
-        gif_frames = _blur_nonselected(frames, detections, selected, det_shape)
+        gif_frames = _blur_nonselected(frames, detections, selected, det_shape) if mode == "normal" else frames
         generate_gif_from_images(process_frames(gif_frames), gif_path)
         print(f"GIF generated in {_time.time() - t:.2f}s")
 
