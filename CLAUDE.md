@@ -88,7 +88,19 @@ Rolls execute one at a time via an in-memory `RollQueue` (background worker thre
 
 Base URL: `http://<pi-ip>:5000`
 
-### Roll — no auth required
+### Authentication
+
+All API endpoints require authentication. Three ways to authenticate:
+1. **Bearer token** — `Authorization: Bearer <token>` header (primary method)
+2. **`?token=<token>` query param** — for EventSource/SSE which cannot set headers
+3. **`LOCAL_SUBNET` bypass** — requests from the configured IP range auto-authenticate as `local` user (set in `.env`)
+
+Without valid auth → `403 {"error": "unauthorized"}`.
+
+Tokens are UUIDs generated at user creation. Shown once in the create response, visible in `/admin`.
+The `local` user token is printed to the console on every app startup.
+
+### Roll
 
 #### `POST /api/roll`
 Submit a roll to the local queue.

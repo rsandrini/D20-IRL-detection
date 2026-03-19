@@ -99,9 +99,51 @@
         nav { margin-bottom: 10px; font-size: 14px; }
         nav a { margin-right: 12px; color: #007bff; text-decoration: none; }
         nav a:hover { text-decoration: underline; }
+
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #login-box {
+            background: #fff; padding: 32px 36px; border-radius: 8px;
+            max-width: 420px; width: 90%; text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        #login-box h2 { margin: 0 0 8px; color: #333; }
+        #login-box p { color: #666; font-size: 14px; margin: 0 0 16px; }
+        #token-input {
+            width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;
+            font-family: monospace; font-size: 13px; box-sizing: border-box; margin-bottom: 12px;
+        }
+        #token-save-btn {
+            background: #007bff; color: #fff; border: none; padding: 9px 28px;
+            border-radius: 4px; font-size: 15px; cursor: pointer;
+        }
+        #token-save-btn:hover { background: #0056b3; }
+        #token-error { color: #dc3545; font-size: 13px; margin-top: 8px; min-height: 18px; }
+        .user-badge {
+            float: right; font-size: 13px; color: #555;
+            background: #f0f0f0; padding: 3px 10px; border-radius: 12px;
+        }
+        .user-badge a { color: #dc3545; margin-left: 8px; text-decoration: none; font-size: 12px; }
     </style>
 </head>
 <body>
+
+<!-- Login overlay — shown when no valid token in localStorage -->
+<div id="login-overlay" style="display:none;">
+    <div id="login-box">
+        <h2>D20 IRL</h2>
+        <p>Paste your token to get started.<br>Ask the admin or check <a href="/admin">/admin</a>.</p>
+        <input type="text" id="token-input" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+        <div>
+            <button id="token-save-btn" onclick="saveToken()">Save token</button>
+        </div>
+        <div id="token-error"></div>
+    </div>
+</div>
+
 <div class="container">
     <nav>
         <a href="/">Roll</a>
@@ -110,6 +152,11 @@
         <a href="/label">Label</a>
         <a href="/routes">API Docs</a>
     </nav>
+
+    <div id="user-badge" class="user-badge" style="display:none;">
+        <span id="user-badge-name"></span>
+        <a href="#" onclick="logout(); return false;">logout</a>
+    </div>
 
     <h1>D20 Roll</h1>
 
@@ -155,6 +202,93 @@
 </div>
 
 <script>
+    // ---------------------------------------------------------------------------
+    // Auth helpers
+    // ---------------------------------------------------------------------------
+    function getToken() {
+        return localStorage.getItem('d20_token') || '';
+    }
+
+    function authHeaders() {
+        return {'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json'};
+    }
+
+    function showLoginOverlay() {
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('rollForm').style.display = 'none';
+    }
+
+    function hideLoginOverlay() {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('rollForm').style.display = 'block';
+    }
+
+    function logout() {
+        localStorage.removeItem('d20_token');
+        localStorage.removeItem('d20_client_id');
+        showLoginOverlay();
+        document.getElementById('user-badge').style.display = 'none';
+        document.getElementById('result-box').style.display = 'none';
+        document.getElementById('queue-status').style.display = 'none';
+    }
+
+    function saveToken() {
+        var token = document.getElementById('token-input').value.trim();
+        document.getElementById('token-error').textContent = '';
+        if (!token) {
+            document.getElementById('token-error').textContent = 'Please enter a token.';
+            return;
+        }
+        fetch('/api/auth/me?token=' + encodeURIComponent(token))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.id) {
+                localStorage.setItem('d20_token', token);
+                hideLoginOverlay();
+                showUserBadge(data.id);
+            } else {
+                document.getElementById('token-error').textContent = 'Invalid or disabled token.';
+            }
+        })
+        .catch(function() {
+            document.getElementById('token-error').textContent = 'Could not reach server.';
+        });
+    }
+
+    function showUserBadge(username) {
+        document.getElementById('user-badge-name').textContent = username;
+        document.getElementById('user-badge').style.display = 'inline-block';
+    }
+
+    // ---------------------------------------------------------------------------
+    // Init — verify stored token on page load
+    // ---------------------------------------------------------------------------
+    (function init() {
+        var token = getToken();
+        if (!token) {
+            showLoginOverlay();
+            return;
+        }
+        fetch('/api/auth/me?token=' + encodeURIComponent(token))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.id) {
+                hideLoginOverlay();
+                showUserBadge(data.id);
+            } else {
+                localStorage.removeItem('d20_token');
+                showLoginOverlay();
+            }
+        })
+        .catch(function() {
+            // Server unreachable — allow cached token to be tried on submit
+            hideLoginOverlay();
+        });
+    })();
+
+    // ---------------------------------------------------------------------------
+    // Roll logic (same as before, with auth added)
+    // ---------------------------------------------------------------------------
     var currentRollId = null;
     var showDebug = false;
 
@@ -168,8 +302,6 @@
 
     function submitRoll(e) {
         e.preventDefault();
-
-        // Reset UI
         document.getElementById('error-box').style.display = 'none';
         document.getElementById('result-box').style.display = 'none';
         document.getElementById('queue-status').style.display = 'none';
@@ -183,23 +315,17 @@
 
         fetch('/api/roll', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: authHeaders(),
             body: JSON.stringify({mode: mode, debug: showDebug, client_id: clientId})
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.error) {
-                showError('Error: ' + data.error);
-                resetButton();
-                return;
-            }
+            if (data.error === 'unauthorized') { showLoginOverlay(); resetButton(); return; }
+            if (data.error) { showError('Error: ' + data.error); resetButton(); return; }
             currentRollId = data.roll_id;
             listenForResult(data.roll_id, data.position);
         })
-        .catch(function(err) {
-            showError('Request failed: ' + err);
-            resetButton();
-        });
+        .catch(function(err) { showError('Request failed: ' + err); resetButton(); });
     }
 
     function listenForResult(rollId, position) {
@@ -210,44 +336,28 @@
         }
 
         var evtSource;
-        var usedSSE = false;
-
         try {
-            evtSource = new EventSource('/api/roll/' + rollId + '/stream');
-            usedSSE = true;
-
+            evtSource = new EventSource('/api/roll/' + rollId + '/stream?token=' + encodeURIComponent(getToken()));
             evtSource.onmessage = function(event) {
                 var s = JSON.parse(event.data);
                 handleStatus(s, rollId);
-                if (s.status === 'done' || s.status === 'unknown') {
-                    evtSource.close();
-                }
+                if (s.status === 'done' || s.status === 'unknown') { evtSource.close(); }
             };
-
-            evtSource.onerror = function() {
-                evtSource.close();
-                // Fall back to polling
-                pollStatus(rollId);
-            };
+            evtSource.onerror = function() { evtSource.close(); pollStatus(rollId); };
         } catch(e) {
-            // SSE not supported, fall back to polling
             pollStatus(rollId);
         }
     }
 
     function pollStatus(rollId) {
         function doPoll() {
-            fetch('/api/roll/' + rollId + '/status')
+            fetch('/api/roll/' + rollId + '/status', {headers: {'Authorization': 'Bearer ' + getToken()}})
             .then(function(r) { return r.json(); })
             .then(function(s) {
                 handleStatus(s, rollId);
-                if (s.status !== 'done' && s.status !== 'unknown') {
-                    setTimeout(doPoll, 1000);
-                }
+                if (s.status !== 'done' && s.status !== 'unknown') { setTimeout(doPoll, 1000); }
             })
-            .catch(function() {
-                setTimeout(doPoll, 2000);
-            });
+            .catch(function() { setTimeout(doPoll, 2000); });
         }
         doPoll();
     }
@@ -275,62 +385,42 @@
     function showQueueStatus(msg, isRolling) {
         var qs = document.getElementById('queue-status');
         var loadingGif = document.getElementById('loading-gif');
-        var queueMsg = document.getElementById('queue-msg');
         qs.style.display = 'block';
         loadingGif.style.display = isRolling ? 'block' : 'none';
-        queueMsg.textContent = msg;
+        document.getElementById('queue-msg').textContent = msg;
     }
 
     function showResult(result) {
         document.getElementById('result-box').style.display = 'block';
-
         var selectedFaceEl = document.getElementById('selected-face');
         var detectionListEl = document.getElementById('detection-list');
         var resultImgEl = document.getElementById('result-img');
         var rollGifEl = document.getElementById('roll-gif');
         var infoEl = document.getElementById('info-container');
 
-        if (result.selected && result.selected.face != null) {
-            selectedFaceEl.textContent = result.selected.face;
-        } else {
-            selectedFaceEl.textContent = 'No detection';
-        }
+        selectedFaceEl.textContent = (result.selected && result.selected.face != null) ? result.selected.face : 'No detection';
 
         var detText = '';
         if (result.mode === 'advantage') detText += 'Advantage — ';
         else if (result.mode === 'disadvantage') detText += 'Disadvantage — ';
-
         if (result.detections && result.detections.length > 0) {
-            var parts = result.detections.map(function(d) {
+            detText += result.detections.map(function(d) {
                 return d.face + ' (' + (d.confidence * 100).toFixed(1) + '%)';
-            });
-            detText += parts.join(', ');
+            }).join(', ');
         } else {
             detText += 'No dice detected';
         }
         detectionListEl.textContent = detText;
 
-        if (result.image) {
-            resultImgEl.src = result.image;
-            resultImgEl.style.display = 'block';
-        } else {
-            resultImgEl.style.display = 'none';
-        }
+        if (result.image) { resultImgEl.src = result.image; resultImgEl.style.display = 'block'; }
+        else { resultImgEl.style.display = 'none'; }
 
         rollGifEl.style.display = 'none';
-        if (showDebug && result.gif) {
-            rollGifEl.src = result.gif;
-            rollGifEl.style.display = 'block';
-        }
+        if (showDebug && result.gif) { rollGifEl.src = result.gif; rollGifEl.style.display = 'block'; }
 
         var infoText = '';
-        if (result.time_elapsed_detection) {
-            infoText += 'Detection: ' + result.time_elapsed_detection + 's';
-        }
-        if (result.time_elapsed) {
-            if (infoText) infoText += ' | ';
-            infoText += 'Total: ' + result.time_elapsed + 's';
-        }
+        if (result.time_elapsed_detection) infoText += 'Detection: ' + result.time_elapsed_detection + 's';
+        if (result.time_elapsed) { if (infoText) infoText += ' | '; infoText += 'Total: ' + result.time_elapsed + 's'; }
         infoEl.textContent = infoText;
 
         populateReportSection(result.roll_id || currentRollId, result.detections || []);
@@ -353,28 +443,18 @@
         var reportSection = document.getElementById('report-section');
         var reportInputs = document.getElementById('report-inputs');
         document.getElementById('report-status').textContent = '';
-
-        if (!detections || detections.length === 0) {
-            reportSection.style.display = 'none';
-            return;
-        }
-
+        if (!detections || detections.length === 0) { reportSection.style.display = 'none'; return; }
         reportInputs.innerHTML = '';
         detections.forEach(function(d, i) {
             var label = document.createElement('label');
             label.style.fontSize = '13px';
             label.textContent = 'Die ' + (i + 1) + ' ';
             var input = document.createElement('input');
-            input.type = 'number';
-            input.className = 'correct-face-input';
-            input.min = 1;
-            input.max = 20;
-            input.value = d.face;
-            input.style.width = '60px';
+            input.type = 'number'; input.className = 'correct-face-input';
+            input.min = 1; input.max = 20; input.value = d.face; input.style.width = '60px';
             label.appendChild(input);
             reportInputs.appendChild(label);
         });
-
         reportSection.style.display = 'inline-block';
     }
 
@@ -384,28 +464,19 @@
         var faces = [];
         for (var i = 0; i < inputs.length; i++) {
             var v = parseInt(inputs[i].value);
-            if (!v || v < 1 || v > 20) {
-                document.getElementById('report-status').textContent = 'All values must be between 1 and 20.';
-                return;
-            }
+            if (!v || v < 1 || v > 20) { document.getElementById('report-status').textContent = 'All values must be between 1 and 20.'; return; }
             faces.push(v);
         }
         fetch('/api/roll/' + currentRollId + '/report', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: authHeaders(),
             body: JSON.stringify({correct_faces: faces})
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.status === 'ok') {
-                document.getElementById('report-status').textContent = 'Reported — thank you!';
-            } else {
-                document.getElementById('report-status').textContent = 'Error: ' + (data.error || 'unknown');
-            }
+            document.getElementById('report-status').textContent = data.status === 'ok' ? 'Reported — thank you!' : 'Error: ' + (data.error || 'unknown');
         })
-        .catch(function() {
-            document.getElementById('report-status').textContent = 'Request failed.';
-        });
+        .catch(function() { document.getElementById('report-status').textContent = 'Request failed.'; });
     }
 </script>
 </body>

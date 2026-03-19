@@ -11,7 +11,7 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 import cv2
 import numpy as np
-from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory, Response, session, stream_with_context
+from flask import Flask, request, render_template, jsonify, redirect, url_for, send_from_directory, Response, session, stream_with_context, g
 from object_detection import ObjectDetector
 from dice import *
 import db
@@ -29,6 +29,11 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
 detector = ObjectDetector(MODEL_FOLDER)
 db.init_db()
+
+# Print local token to console for first-time setup
+_local = db.get_user("local")
+if _local and _local.get("token"):
+    print(f"\n  Local user token: {_local['token']}\n")
 
 
 
@@ -131,39 +136,74 @@ def _get_param(key, default=None):
     return val if val is not None else default
 
 
-def _authenticate(username):
-    """Check Bearer token for external user routes. Returns (user_row, error_response)."""
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        return None, (jsonify({"error": "missing_token"}), 401)
-    token = auth[len("Bearer "):]
-    user = db.get_user_by_token(token)
-    if user is None or user["id"] != username:
-        return None, (jsonify({"error": "invalid_token"}), 401)
-    return user, None
-
-
-def _is_admin():
-    if session.get("is_admin"):
-        return True
-    if not os.getenv("ADMIN_PASSWORD"):
-        return True
+def _resolve_user():
+    """Resolve caller to a user dict, or None if unauthenticated.
+    Checks: Bearer token header → ?token query param → LOCAL_SUBNET IP bypass → admin session.
+    """
+    # 1. Bearer token in Authorization header
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
-        user = db.get_user_by_token(auth[7:])
-        if user and user.get("role") == "admin":
-            return True
-    return False
+        user = db.get_user_by_token(auth[7:].strip())
+        if user and user["enabled"]:
+            return dict(user)
+
+    # 2. Token in query string (required for EventSource which cannot set headers)
+    token = request.args.get("token", "").strip()
+    if token:
+        user = db.get_user_by_token(token)
+        if user and user["enabled"]:
+            return dict(user)
+
+    # 3. IP subnet bypass — LOCAL_SUBNET env var (e.g. "192.168.1.0/24")
+    subnet_str = os.getenv("LOCAL_SUBNET", "").strip()
+    if subnet_str:
+        try:
+            from ipaddress import ip_network, ip_address
+            if ip_address(request.remote_addr) in ip_network(subnet_str, strict=False):
+                user = db.get_user("local")
+                if user and user["enabled"]:
+                    return dict(user)
+        except ValueError:
+            pass
+
+    # 4. Admin session (browser login via /admin/login — only for admin UI pages)
+    if session.get("is_admin") or not os.getenv("ADMIN_PASSWORD"):
+        user = db.get_user("local")
+        if user and user["enabled"]:
+            return dict(user)
+
+    return None
+
+
+def require_auth(f):
+    """Require any valid authenticated user. Sets g.current_user."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = _resolve_user()
+        if not user:
+            return jsonify({"error": "unauthorized"}), 403
+        if not user.get("enabled"):
+            return jsonify({"error": "user_disabled"}), 403
+        g.current_user = user
+        return f(*args, **kwargs)
+    return decorated
 
 
 def admin_required(f):
+    """Require admin role. Sets g.current_user."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if _is_admin():
-            return f(*args, **kwargs)
-        if request.is_json or request.accept_mimetypes.best == "application/json":
-            return jsonify({"error": "admin_required"}), 403
-        return redirect(url_for("admin_login"))
+        user = _resolve_user()
+        if not user:
+            if request.is_json or request.accept_mimetypes.best == "application/json":
+                return jsonify({"error": "unauthorized"}), 403
+            return redirect(url_for("admin_login"))
+        if user.get("role") != "admin":
+            if request.is_json or request.accept_mimetypes.best == "application/json":
+                return jsonify({"error": "admin_required"}), 403
+            return redirect(url_for("admin_login"))
+        g.current_user = user
+        return f(*args, **kwargs)
     return decorated
 
 
@@ -247,16 +287,17 @@ def page_roll_dice():
 
 
 # ---------------------------------------------------------------------------
-# /api/roll — local endpoint (no auth), async via queue
+# /api/roll — async via queue
 # ---------------------------------------------------------------------------
 
 @app.route('/api/roll', methods=['POST'])
+@require_auth
 def api_roll_dice():
-    client_id = _get_param("client_id") or request.headers.get("X-Client-Id", "local-anon")
+    client_id = _get_param("client_id") or request.headers.get("X-Client-Id") or g.current_user["id"]
     mode  = _get_param("mode", "normal")
     debug = bool(_get_param("debug", False))
     roll_id, position = roll_queue.submit(client_id, {
-        "user_id": "local",
+        "user_id": g.current_user["id"],
         "mode": mode,
         "debug": debug,
     })
@@ -264,6 +305,7 @@ def api_roll_dice():
 
 
 @app.route('/api/roll/<roll_id>/stream')
+@require_auth
 def roll_stream(roll_id):
     def generate():
         while True:
@@ -280,6 +322,7 @@ def roll_stream(roll_id):
 
 
 @app.route('/api/roll/<roll_id>/status')
+@require_auth
 def roll_status(roll_id):
     return jsonify(roll_queue.status(roll_id))
 
@@ -289,6 +332,7 @@ def roll_status(roll_id):
 # ---------------------------------------------------------------------------
 
 @app.route('/api/roll/<roll_id>/report', methods=['POST'])
+@require_auth
 def report_roll(roll_id):
     data = request.get_json(silent=True) or {}
     raw = data.get("correct_faces")
@@ -316,16 +360,27 @@ def acknowledge_report(roll_id):
     return jsonify({"status": "ok"})
 
 
+@app.route('/api/auth/me')
+@require_auth
+def auth_me():
+    u = g.current_user
+    return jsonify({"id": u["id"], "role": u["role"], "enabled": u["enabled"]})
+
+
 # ---------------------------------------------------------------------------
 # /u/<username>/roll  and  /u/<username>/history
 # ---------------------------------------------------------------------------
 
 @app.route('/u/<username>/roll', methods=['POST'])
+@require_auth
 def user_roll(username):
-    user, err = _authenticate(username)
-    if err:
-        return err
+    # Must be rolling as yourself or be an admin
+    if g.current_user["id"] != username and g.current_user.get("role") != "admin":
+        return jsonify({"error": "forbidden"}), 403
 
+    user = db.get_user(username)
+    if not user:
+        return jsonify({"error": "user not found"}), 404
     if not user["enabled"]:
         return jsonify({"error": "user_disabled"}), 403
 
@@ -345,10 +400,10 @@ def user_roll(username):
 
 
 @app.route('/u/<username>/history', methods=['GET'])
+@require_auth
 def user_history(username):
-    user, err = _authenticate(username)
-    if err:
-        return err
+    if g.current_user["id"] != username and g.current_user.get("role") != "admin":
+        return jsonify({"error": "forbidden"}), 403
     limit = int(request.args.get("limit", 20))
     rolls = db.get_rolls(user_id=username, limit=limit)
     return jsonify(rolls)

@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import uuid
 import secrets
 from datetime import datetime, timezone
 
@@ -58,6 +59,12 @@ def init_db():
             except Exception:
                 pass
 
+        # Ensure local user has a token
+        row = conn.execute("SELECT token FROM users WHERE id='local'").fetchone()
+        if row and not row["token"]:
+            conn.execute("UPDATE users SET token=? WHERE id='local'", (str(uuid.uuid4()),))
+            conn.commit()
+
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
@@ -104,7 +111,7 @@ def list_users():
 
 
 def create_user(user_id, daily_limit=0, role='user'):
-    token = secrets.token_hex(16)
+    token = str(uuid.uuid4())
     with _connect() as conn:
         conn.execute("""
             INSERT INTO users (id, enabled, daily_limit, token, created_at, role)
