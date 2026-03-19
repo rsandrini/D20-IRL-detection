@@ -12,9 +12,7 @@
             background-color: #f0f0f0;
         }
 
-        h1 {
-            color: #333;
-        }
+        h1 { color: #333; }
 
         .container {
             max-width: 800px;
@@ -22,25 +20,17 @@
             padding: 20px;
             background-color: #fff;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
-        .result-container {
-            text-align: center;
-            margin-top: 20px;
-        }
+        .result-container { text-align: center; margin-top: 20px; }
 
-        img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-        }
+        img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 
-        .form-container {
-            margin-top: 20px;
-            text-align: center;
-        }
+        .form-container { margin-top: 20px; text-align: center; }
+
+        .mode-selector { margin-bottom: 12px; }
+        .mode-selector label { margin-right: 14px; cursor: pointer; font-size: 15px; }
 
         input[type="submit"] {
             background-color: #007bff;
@@ -52,54 +42,173 @@
             border-radius: 4px;
         }
 
-        input[type="submit"]:hover {
-            background-color: #0056b3;
+        input[type="submit"]:hover { background-color: #0056b3; }
+
+        .selected-face {
+            font-size: 3em;
+            font-weight: bold;
+            color: #222;
         }
+
+        .detection-list {
+            color: #555;
+            font-size: 0.95em;
+            margin-top: 4px;
+        }
+
+        .report-section {
+            margin-top: 18px;
+            padding: 12px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .report-section input[type="number"] {
+            width: 60px;
+            padding: 4px 6px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .report-section button {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+
+        .report-section button:hover { background: #a71d2a; }
+
+        #report-status { font-size: 13px; color: #333; margin-top: 6px; }
+
+        .error-box {
+            color: #dc3545;
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+
+        nav { margin-bottom: 10px; font-size: 14px; }
+        nav a { margin-right: 12px; color: #007bff; text-decoration: none; }
+        nav a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Roll Result</h1>
-        <div class="result-container">
-            {% if gif %}
-                <img src="{{ gif }}" alt="Roll GIF" id="roll-gif" >
-            {% endif %}
-                <img src="static/gif/loading.gif" alt="loading GIF" id="loading-gif" style="display: none;">
+<div class="container">
+    <nav>
+        <a href="/">Roll</a>
+        <a href="/admin">Admin</a>
+        <a href="/calibrate">Calibrate</a>
+        <a href="/label">Label</a>
+        <a href="/routes">API Docs</a>
+    </nav>
 
-            <div id="result-box" style="display: block;">
-                <h1>{{ detection_text }}</h1>
-                <p>
-                    <img src="{{ result_image }}" id="result-img">
-                </p>
-            </div>
-        </div>
-        {% if time_elapsed_detection %}
-            <div class="info-container" id="info-container" style="display: block;">
-                <p>Elapsed detection time: {{ time_elapsed_detection }}</p>
-                <p>Elapsed total processing time: {{ time_elapsed }}</p>
-            </div>
+    <h1>D20 Roll</h1>
+
+    {% if error %}
+        <div class="error-box">Error: {{ error }}</div>
+    {% endif %}
+
+    <div class="result-container">
+        {% if gif %}
+            <img src="{{ gif }}" alt="Roll GIF" id="roll-gif">
         {% endif %}
-        <div class="form-container">
-            <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
-                Show gif
-                <input type="checkbox" name="debug" id="debug" checked>
-                <input type="submit" id="rollButton" value="Let's roll!">
-            </form>
+        <img src="static/gif/loading.gif" alt="loading" id="loading-gif" style="display:none;">
+
+        <div id="result-box" style="display:block;">
+            {% if selected %}
+                <div class="selected-face">{{ selected.face }}</div>
+                <div class="detection-list">
+                    {% if mode == 'advantage' %}Advantage —
+                    {% elif mode == 'disadvantage' %}Disadvantage —
+                    {% endif %}
+                    {% for d in detections %}
+                        {{ d.face }} ({{ (d.confidence * 100) | round(1) }}%){% if not loop.last %},{% endif %}
+                    {% endfor %}
+                </div>
+            {% elif detections is defined and detections|length == 0 and result_image %}
+                <p>No dice detected.</p>
+            {% endif %}
+
+            {% if result_image %}
+                <p><img src="{{ result_image }}" id="result-img"></p>
+            {% endif %}
+
+            {% if roll_id and selected %}
+                <div class="report-section">
+                    <span style="font-size:13px; color:#666;">Wrong result?</span>
+                    <input type="number" id="correct-face" min="1" max="20" placeholder="1–20">
+                    <button onclick="reportWrong()">Report</button>
+                    <div id="report-status"></div>
+                </div>
+            {% endif %}
         </div>
     </div>
 
-    <script>
-        function disableButton() {
-            // Show the loading GIF
-            document.getElementById("loading-gif").style.display = "block";
-            document.getElementById("roll-gif").style.display = "none";
-            document.getElementById("info-container").style.display = "none";
-            document.getElementById("result-box").style.display = "none";
+    {% if time_elapsed_detection %}
+        <div id="info-container" style="margin-top:10px;">
+            <p>Detection time: {{ time_elapsed_detection }}s &nbsp;|&nbsp; Total: {{ time_elapsed }}s</p>
+        </div>
+    {% endif %}
 
-            // Disable the button after form submission
-            document.getElementById("rollButton").disabled = true;
-            document.getElementById("rollButton").value = "Rolling...";
+    <div class="form-container">
+        <form action="/" method="POST" id="rollForm" onsubmit="disableButton()">
+            <div class="mode-selector">
+                <label><input type="radio" name="mode" value="normal" {% if not mode or mode=='normal' %}checked{% endif %}> Normal</label>
+                <label><input type="radio" name="mode" value="advantage" {% if mode=='advantage' %}checked{% endif %}> Advantage</label>
+                <label><input type="radio" name="mode" value="disadvantage" {% if mode=='disadvantage' %}checked{% endif %}> Disadvantage</label>
+            </div>
+            Show gif <input type="checkbox" name="debug" id="debug" checked>
+            <br><br>
+            <input type="submit" id="rollButton" value="Let's roll!">
+        </form>
+    </div>
+</div>
+
+<script>
+    const ROLL_ID = {{ ('"' + roll_id + '"') | safe if roll_id else 'null' }};
+
+    function disableButton() {
+        var loadingGif = document.getElementById("loading-gif");
+        var rollGif = document.getElementById("roll-gif");
+        var infoContainer = document.getElementById("info-container");
+        var resultBox = document.getElementById("result-box");
+
+        if (loadingGif) loadingGif.style.display = "block";
+        if (rollGif) rollGif.style.display = "none";
+        if (infoContainer) infoContainer.style.display = "none";
+        if (resultBox) resultBox.style.display = "none";
+
+        document.getElementById("rollButton").disabled = true;
+        document.getElementById("rollButton").value = "Rolling...";
+    }
+
+    function reportWrong() {
+        if (!ROLL_ID) return;
+        var face = parseInt(document.getElementById("correct-face").value);
+        if (!face || face < 1 || face > 20) {
+            document.getElementById("report-status").textContent = "Enter a value between 1 and 20.";
+            return;
         }
-    </script>
+        fetch("/api/roll/" + ROLL_ID + "/report", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({correct_face: face})
+        }).then(r => r.json()).then(data => {
+            if (data.status === "ok") {
+                document.getElementById("report-status").textContent = "Reported — thank you!";
+            } else {
+                document.getElementById("report-status").textContent = "Error: " + (data.error || "unknown");
+            }
+        }).catch(() => {
+            document.getElementById("report-status").textContent = "Request failed.";
+        });
+    }
+</script>
 </body>
 </html>

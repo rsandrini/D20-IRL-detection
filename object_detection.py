@@ -39,6 +39,7 @@ class ObjectDetector:
         return (input_data.astype(np.float32) / 255.0)
 
     def detect_objects(self, image_path, image_name):
+        """Run inference and return list of dicts: {face, confidence, bbox [x1,y1,x2,y2]}."""
         if self.interpreter is None:
             return []
         image_path_file = os.path.join(image_path, image_name)
@@ -78,11 +79,16 @@ class ObjectDetector:
         detections = []
         for i in indices.flatten()[:2]:
             label = self.labels[class_ids[i]]
-            detections.append([label, f"{int(confidences[i] * 100)}%"])
-
             x, y, w, h = nms_boxes[i]
-            xmax, ymax = x + w, y + h
-            cv2.rectangle(image, (x, y), (xmax, ymax), (10, 255, 0), 2)
+            x2, y2 = x + w, y + h
+
+            detections.append({
+                "face": int(label),
+                "confidence": round(float(confidences[i]), 4),
+                "bbox": [int(x), int(y), int(x2), int(y2)],
+            })
+
+            cv2.rectangle(image, (x, y), (x2, y2), (10, 255, 0), 2)
             label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
             ly = max(y, label_size[1] + 10)
             cv2.rectangle(image, (x, ly - label_size[1] - 10), (x + label_size[0], ly + 5), (255, 255, 255), cv2.FILLED)
@@ -90,3 +96,20 @@ class ObjectDetector:
 
         cv2.imwrite(image_path_file, image)
         return detections
+
+    def crop_image(self, image_path, bbox, margin=20):
+        """Crop image to bbox with margin, save as <stem>_crop.jpg, return new path."""
+        image = cv2.imread(image_path)
+        if image is None:
+            return None
+        imH, imW = image.shape[:2]
+        x1, y1, x2, y2 = bbox
+        x1 = max(0, x1 - margin)
+        y1 = max(0, y1 - margin)
+        x2 = min(imW, x2 + margin)
+        y2 = min(imH, y2 + margin)
+        cropped = image[y1:y2, x1:x2]
+        stem, ext = os.path.splitext(image_path)
+        crop_path = f"{stem}_crop{ext}"
+        cv2.imwrite(crop_path, cropped)
+        return crop_path

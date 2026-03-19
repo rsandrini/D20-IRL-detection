@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — D20 IRL</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f0f0; }
+        h1, h2 { color: #333; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        nav { margin-bottom: 14px; font-size: 14px; }
+        nav a { margin-right: 12px; color: #007bff; text-decoration: none; }
+        nav a:hover { text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 8px 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f5f5f5; font-weight: bold; }
+        tr:nth-child(even) { background: #fafafa; }
+        .badge-wrong { background: #dc3545; color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+        .badge-ok { background: #28a745; color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+        button { cursor: pointer; border: none; border-radius: 4px; padding: 4px 10px; font-size: 13px; }
+        button.enable  { background: #28a745; color: #fff; }
+        button.disable { background: #dc3545; color: #fff; }
+        button.save    { background: #007bff; color: #fff; }
+        input[type="number"], input[type="text"] { padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; }
+        .add-user-form { margin-top: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .add-user-form label { font-size: 14px; }
+        #add-status { font-size: 13px; color: #333; }
+        .token-cell { font-family: monospace; font-size: 12px; word-break: break-all; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <nav>
+        <a href="/">Roll</a>
+        <a href="/admin">Admin</a>
+        <a href="/calibrate">Calibrate</a>
+        <a href="/label">Label</a>
+        <a href="/routes">API Docs</a>
+    </nav>
+
+    <h1>Admin</h1>
+
+    <!-- Users table -->
+    <h2>Users</h2>
+    <table id="users-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Enabled</th>
+                <th>Daily Limit</th>
+                <th>Token</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for u in users %}
+            <tr id="user-row-{{ u.id }}">
+                <td>{{ u.id }}</td>
+                <td>
+                    {% if u.enabled %}
+                        <span class="badge-ok">Yes</span>
+                    {% else %}
+                        <span class="badge-wrong">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <input type="number" min="0" value="{{ u.daily_limit }}" id="limit-{{ u.id }}" style="width:70px;">
+                    <button class="save" onclick="saveLimit('{{ u.id }}')">Save</button>
+                </td>
+                <td class="token-cell">{{ u.token or '—' }}</td>
+                <td>{{ u.created_at[:10] if u.created_at else '' }}</td>
+                <td>
+                    {% if u.id != 'local' %}
+                        {% if u.enabled %}
+                            <button class="disable" onclick="setEnabled('{{ u.id }}', false)">Disable</button>
+                        {% else %}
+                            <button class="enable" onclick="setEnabled('{{ u.id }}', true)">Enable</button>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="add-user-form">
+        <label>New user ID: <input type="text" id="new-user-id" placeholder="alice"></label>
+        <label>Daily limit: <input type="number" min="0" value="0" id="new-user-limit" style="width:70px;"></label>
+        <button class="save" onclick="addUser()">Add User</button>
+        <span id="add-status"></span>
+    </div>
+
+    <!-- Roll history -->
+    <h2 style="margin-top:32px;">Recent Rolls (last 50)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Mode</th>
+                <th>Selected</th>
+                <th>Detections</th>
+                <th>Total (s)</th>
+                <th>Reported</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in rolls %}
+            <tr>
+                <td>{{ r.created_at[:19].replace('T',' ') if r.created_at else '' }}</td>
+                <td>{{ r.user_id }}</td>
+                <td>{{ r.mode }}</td>
+                <td>{{ r.selected_face or '—' }}</td>
+                <td>
+                    {% if r.detections_parsed %}
+                        {% for d in r.detections_parsed %}{{ d.face }}({{ (d.confidence*100)|round(0)|int }}%){% if not loop.last %}, {% endif %}{% endfor %}
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ r.time_elapsed }}</td>
+                <td>
+                    {% if r.reported_wrong %}
+                        <span class="badge-wrong">Wrong → {{ r.correct_face }}</span>
+                    {% else %}
+                        <span class="badge-ok">OK</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function setEnabled(userId, enabled) {
+        fetch("/api/users/" + userId, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({enabled: enabled})
+        }).then(r => r.json()).then(() => location.reload());
+    }
+
+    function saveLimit(userId) {
+        var limit = parseInt(document.getElementById("limit-" + userId).value) || 0;
+        fetch("/api/users/" + userId, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({daily_limit: limit})
+        }).then(r => r.json()).then(() => location.reload());
+    }
+
+    function addUser() {
+        var userId = document.getElementById("new-user-id").value.trim();
+        var limit = parseInt(document.getElementById("new-user-limit").value) || 0;
+        if (!userId) {
+            document.getElementById("add-status").textContent = "Enter a user ID.";
+            return;
+        }
+        fetch("/api/users", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id: userId, daily_limit: limit})
+        }).then(r => r.json()).then(data => {
+            if (data.token) {
+                document.getElementById("add-status").textContent =
+                    "Created! Token: " + data.token + " (save this — shown only once)";
+                location.reload();
+            } else {
+                document.getElementById("add-status").textContent = "Error: " + (data.error || "unknown");
+            }
+        });
+    }
+</script>
+</body>
+</html>

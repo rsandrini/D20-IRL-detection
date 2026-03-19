@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Routes — D20 IRL</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f0f0; }
+        h1, h2 { color: #333; }
+        h2 { margin-top: 28px; border-bottom: 2px solid #ddd; padding-bottom: 6px; }
+        .container { max-width: 900px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        nav { margin-bottom: 14px; font-size: 14px; }
+        nav a { margin-right: 12px; color: #007bff; text-decoration: none; }
+        nav a:hover { text-decoration: underline; }
+        nav a.active { font-weight: bold; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 9px 12px; border: 1px solid #ddd; vertical-align: top; }
+        th { background: #f5f5f5; white-space: nowrap; }
+        td code, th code { font-family: monospace; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+        .method { font-weight: bold; font-family: monospace; padding: 2px 7px; border-radius: 4px; font-size: 12px; }
+        .get    { background: #d1ecf1; color: #0c5460; }
+        .post   { background: #d4edda; color: #155724; }
+        .put    { background: #fff3cd; color: #856404; }
+        .badge-auth { background: #dc3545; color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 11px; }
+        .badge-open { background: #28a745; color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 11px; }
+        pre { background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; padding: 12px; overflow-x: auto; font-size: 13px; margin-top: 6px; }
+        .example-block { margin-top: 6px; }
+        details summary { cursor: pointer; color: #007bff; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <nav>
+        <a href="/">Roll</a>
+        <a href="/admin">Admin</a>
+        <a href="/calibrate">Calibrate</a>
+        <a href="/label">Label</a>
+        <a href="/routes" class="active">API Docs</a>
+    </nav>
+
+    <h1>D20 IRL — API Reference</h1>
+    <p style="color:#555; font-size:14px;">Base URL: <code>http://&lt;pi-ip&gt;:5000</code></p>
+
+    <!-- ── UI Pages ─────────────────────────────────────────────────── -->
+    <h2>UI Pages</h2>
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/</code></td>
+                <td>Roll page — dice roll form and result display</td>
+            </tr>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/admin</code></td>
+                <td>Admin panel — manage users, view roll history</td>
+            </tr>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/calibrate</code></td>
+                <td>Camera ROI calibration tool</td>
+            </tr>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/label</code></td>
+                <td>Training data labeling tool</td>
+            </tr>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/routes</code></td>
+                <td>This page — full API reference</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ── Local Roll API ────────────────────────────────────────────── -->
+    <h2>Local Roll API <span class="badge-open">No auth</span></h2>
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Body / Params</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><span class="method post">POST</span></td>
+                <td><code>/api/roll</code></td>
+                <td>
+                    <code>mode</code> = <code>normal</code> | <code>advantage</code> | <code>disadvantage</code> (default: <code>normal</code>)<br>
+                    <code>debug</code> = any value → generate GIF
+                </td>
+                <td>
+                    Roll the die and detect the result.
+                    <details class="example-block">
+                        <summary>Response example</summary>
+<pre>{
+  "roll_id": "uuid",
+  "mode": "normal",
+  "detections": [
+    {"face": 15, "confidence": 0.87, "bbox": [x1, y1, x2, y2]}
+  ],
+  "selected": {"face": 15, "confidence": 0.87, "bbox": [...]},
+  "image": "static/results/uuid_crop.jpg",
+  "gif":   "static/results/uuid.gif",
+  "time_elapsed": 2.45,
+  "time_elapsed_detection": 0.18
+}</pre>
+                    </details>
+                    <details>
+                        <summary>Error responses</summary>
+<pre>429 {"error": "roll_in_progress"}
+422 {"error": "could_not_detect_two_dice", "detections": [...]}
+</pre>
+                    </details>
+                </td>
+            </tr>
+            <tr>
+                <td><span class="method post">POST</span></td>
+                <td><code>/api/roll/&lt;roll_id&gt;/report</code></td>
+                <td>JSON body: <code>{"correct_face": 15}</code></td>
+                <td>
+                    Report a wrong detection result. Updates DB for retraining.
+                    <details class="example-block">
+                        <summary>Response</summary>
+<pre>200 {"status": "ok"}
+400 {"error": "correct_face required"}
+404 {"error": "roll not found"}</pre>
+                    </details>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ── User Roll API ─────────────────────────────────────────────── -->
+    <h2>User Roll API <span class="badge-auth">Bearer token</span></h2>
+    <p style="font-size:13px; color:#555;">Pass <code>Authorization: Bearer &lt;token&gt;</code> header. Token is shown once at user creation.</p>
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Body / Params</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><span class="method post">POST</span></td>
+                <td><code>/u/&lt;username&gt;/roll</code></td>
+                <td>Same as <code>/api/roll</code> — <code>mode</code>, <code>debug</code></td>
+                <td>
+                    Roll for a specific user. Enforces <code>enabled</code> flag and <code>daily_limit</code>.
+                    <details class="example-block">
+                        <summary>Error responses</summary>
+<pre>401 {"error": "missing_token" | "invalid_token"}
+403 {"error": "user_disabled"}
+403 {"error": "daily_limit_reached", "limit": 10, "used": 10}
+429 {"error": "roll_in_progress"}</pre>
+                    </details>
+                </td>
+            </tr>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/u/&lt;username&gt;/history</code></td>
+                <td>Query: <code>limit</code> (default 20)</td>
+                <td>Returns the last N rolls for that user as a JSON array.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ── User Management ───────────────────────────────────────────── -->
+    <h2>User Management <span class="badge-open">No auth</span></h2>
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Body</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/api/users</code></td>
+                <td>—</td>
+                <td>List all users.</td>
+            </tr>
+            <tr>
+                <td><span class="method post">POST</span></td>
+                <td><code>/api/users</code></td>
+                <td><code>{"id": "alice", "daily_limit": 10}</code></td>
+                <td>
+                    Create a user. Returns token (shown only once).
+                    <details class="example-block">
+                        <summary>Response</summary>
+<pre>201 {"id": "alice", "token": "&lt;32-char hex&gt;", "daily_limit": 10}
+409 {"error": "user already exists"}</pre>
+                    </details>
+                </td>
+            </tr>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/api/users/&lt;username&gt;</code></td>
+                <td>—</td>
+                <td>Get user info + today's roll count.</td>
+            </tr>
+            <tr>
+                <td><span class="method put">PUT</span></td>
+                <td><code>/api/users/&lt;username&gt;</code></td>
+                <td><code>{"enabled": false, "daily_limit": 20}</code></td>
+                <td>Update user enabled state or daily limit.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ── Calibration ───────────────────────────────────────────────── -->
+    <h2>Calibration (internal)</h2>
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/calibrate/stream</code></td>
+                <td>MJPEG live camera stream</td>
+            </tr>
+            <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/calibrate/snapshot</code></td>
+                <td>Single JPEG frame from camera</td>
+            </tr>
+            <tr>
+                <td><span class="method post">POST</span></td>
+                <td><code>/calibrate/save</code></td>
+                <td>Save ROI to <code>.env</code> — body: <code>{"roi": "x,y,w,h"}</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+</body>
+</html>
