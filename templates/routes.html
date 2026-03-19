@@ -114,13 +114,13 @@
             <tr>
                 <td><span class="method post">POST</span></td>
                 <td><code>/api/roll/&lt;roll_id&gt;/report</code></td>
-                <td>JSON body: <code>{"correct_face": 15}</code></td>
+                <td>JSON body: <code>{"correct_faces": [15]}</code> or <code>{"correct_faces": [15, 7]}</code></td>
                 <td>
-                    Report a wrong detection result. Updates DB for retraining.
+                    Report wrong detection(s). One value per detected die, pre-filled in the UI. Updates DB for retraining.
                     <details class="example-block">
                         <summary>Response</summary>
 <pre>200 {"status": "ok"}
-400 {"error": "correct_face required"}
+400 {"error": "correct_faces required"}
 404 {"error": "roll not found"}</pre>
                     </details>
                 </td>

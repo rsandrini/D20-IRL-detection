@@ -20,7 +20,8 @@ def init_db():
                 enabled     INTEGER DEFAULT 1,
                 daily_limit INTEGER DEFAULT 0,
                 token       TEXT,
-                created_at  TEXT
+                created_at  TEXT,
+                role        TEXT DEFAULT 'user'
             )
         """)
         conn.execute("""
@@ -36,14 +37,26 @@ def init_db():
                 time_elapsed_detection REAL,
                 created_at            TEXT,
                 reported_wrong        INTEGER DEFAULT 0,
-                correct_face          INTEGER
+                correct_faces         TEXT,
+                reviewed              INTEGER DEFAULT 0
             )
         """)
         conn.execute("""
-            INSERT OR IGNORE INTO users (id, enabled, daily_limit, token, created_at)
-            VALUES ('local', 1, 0, NULL, ?)
+            INSERT OR IGNORE INTO users (id, enabled, daily_limit, token, created_at, role)
+            VALUES ('local', 1, 0, NULL, ?, 'admin')
         """, (_now(),))
         conn.commit()
+
+        for stmt in [
+            "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'",
+            "ALTER TABLE rolls ADD COLUMN reviewed INTEGER DEFAULT 0",
+            "ALTER TABLE rolls ADD COLUMN correct_faces TEXT",
+        ]:
+            try:
+                conn.execute(stmt)
+                conn.commit()
+            except Exception:
+                pass
 
 
 def _now():
@@ -62,11 +75,12 @@ def save_roll(roll_id, user_id, mode, detections, selected_face,
         conn.commit()
 
 
-def report_roll(roll_id, correct_face):
+def report_roll(roll_id, correct_faces):
+    """correct_faces: list of ints, one per detected die."""
     with _connect() as conn:
         conn.execute(
-            "UPDATE rolls SET reported_wrong=1, correct_face=? WHERE id=?",
-            (correct_face, roll_id)
+            "UPDATE rolls SET reported_wrong=1, correct_faces=? WHERE id=?",
+            (json.dumps(correct_faces), roll_id)
         )
         conn.commit()
         return conn.execute("SELECT changes()").fetchone()[0]
@@ -89,19 +103,19 @@ def list_users():
         ).fetchall()]
 
 
-def create_user(user_id, daily_limit=0):
+def create_user(user_id, daily_limit=0, role='user'):
     token = secrets.token_hex(16)
     with _connect() as conn:
         conn.execute("""
-            INSERT INTO users (id, enabled, daily_limit, token, created_at)
-            VALUES (?, 1, ?, ?, ?)
-        """, (user_id, daily_limit, token, _now()))
+            INSERT INTO users (id, enabled, daily_limit, token, created_at, role)
+            VALUES (?, 1, ?, ?, ?, ?)
+        """, (user_id, daily_limit, token, _now(), role))
         conn.commit()
     return token
 
 
 def update_user(user_id, **kwargs):
-    allowed = {"enabled", "daily_limit"}
+    allowed = {"enabled", "daily_limit", "role"}
     fields = {k: v for k, v in kwargs.items() if k in allowed}
     if not fields:
         return False
@@ -141,3 +155,27 @@ def get_roll(roll_id):
     with _connect() as conn:
         row = conn.execute("SELECT * FROM rolls WHERE id=?", (roll_id,)).fetchone()
         return dict(row) if row else None
+
+
+def get_reports(only_unreviewed=True):
+    with _connect() as conn:
+        if only_unreviewed:
+            rows = conn.execute("""
+                SELECT * FROM rolls WHERE reported_wrong=1 AND reviewed=0
+                ORDER BY created_at DESC
+            """).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT * FROM rolls WHERE reported_wrong=1
+                ORDER BY created_at DESC
+            """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def acknowledge_report(roll_id):
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE rolls SET reviewed=1 WHERE id=?",
+            (roll_id,)
+        )
+        conn.commit()

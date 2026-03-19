@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Login — D20 IRL</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f0f0f0; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
+    .box { background:#fff; padding:32px 40px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); text-align:center; }
+    input[type=password] { padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:15px; margin:8px 0; width:200px; }
+    button { background:#007bff; color:#fff; border:none; padding:9px 24px; border-radius:4px; font-size:15px; cursor:pointer; }
+    button:hover { background:#0056b3; }
+    .error { color:#dc3545; margin-top:8px; font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Admin Login</h2>
+    <form method="POST">
+      <div><input type="password" name="password" placeholder="Password" autofocus></div>
+      <div><button type="submit">Login</button></div>
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    </form>
+    <p style="margin-top:12px; font-size:13px;"><a href="/">&#8592; Back to Roll</a></p>
+  </div>
+</body>
+</html>

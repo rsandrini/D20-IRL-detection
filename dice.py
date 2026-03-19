@@ -26,6 +26,36 @@ def _parse_roi():
 
 CAMERA_ROI = _parse_roi()
 
+# ---------------------------------------------------------------------------
+# Persistent camera — opened once, reused across rolls to eliminate the
+# ~500–1000ms VideoCapture(0) init cost that happened on every roll.
+# ---------------------------------------------------------------------------
+_cap = None
+
+
+def _get_cap():
+    """Return the shared camera, (re)initializing it if needed."""
+    global _cap
+    if _cap is not None and _cap.isOpened():
+        return _cap
+    print("Initializing camera...")
+    _cap = cv2.VideoCapture(0)
+    _cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    _cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    _cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    # Drain stale frames after a fresh open
+    for _ in range(5):
+        _cap.read()
+    return _cap
+
+
+def release_camera():
+    """Explicitly release the shared camera (e.g. to free it for calibration)."""
+    global _cap
+    if _cap is not None:
+        _cap.release()
+        _cap = None
+
 
 def _apply_roi(frame):
     if CAMERA_ROI is None:
@@ -80,28 +110,31 @@ def generate_gif_from_images(image_list, gif_name):
 
 
 def roll_dice(uuid, folder, debug):
-    # Capture at 1920x1080 for maximum ROI resolution after crop
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap = _get_cap()
 
-    # Flush camera buffer so we get fresh frames immediately
-    for _ in range(5):
+    # Flush stale frames from the buffer (camera was idle between rolls).
+    # 2 frames is enough — the buffer is small on MJPG cameras.
+    for _ in range(2):
         cap.read()
 
     last_frame_gray = None
     frames_since_last_motion = 0
-    frames = []           # GIF frames (small, RGB)
+    frames = []             # GIF frames (small, RGB)
     detection_frame = None  # Full-res ROI frame for model inference
 
-    # Auto-calibrate motion threshold from baseline noise before rolling
+    # Auto-calibrate motion threshold from baseline noise before rolling.
+    # 5 frames is enough for a stable noise-floor estimate.
     print("Calibrating motion baseline...")
     baseline_scores = []
-    for _ in range(10):
+    for _ in range(5):
         ret, frame = cap.read()
         if not ret:
-            continue
+            # Camera dropped — reinitialize and retry once
+            release_camera()
+            cap = _get_cap()
+            ret, frame = cap.read()
+            if not ret:
+                continue
         small = cv2.resize(_apply_roi(frame), (480, 270), interpolation=cv2.INTER_AREA)
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
         if last_frame_gray is not None:
@@ -157,11 +190,11 @@ def roll_dice(uuid, folder, debug):
         print(f"Time taken to create GIF: {time.time() - start:.2f} seconds")
 
     print("Finishing...")
-    cap.release()
-    print("Camera released")
+    # Camera stays open — no cap.release()
 
 
 if __name__ == "__main__":
     RESULT_FOLDER = "results"
     uuid = "unique_id"
     roll_dice(uuid, RESULT_FOLDER, debug=False)
+    release_camera()
