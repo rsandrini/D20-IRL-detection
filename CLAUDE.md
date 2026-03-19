@@ -136,9 +136,10 @@ Polling fallback — same response shapes as SSE above.
   "time_elapsed_detection": 0.18
 }
 ```
-- `normal` mode: up to 2 detections, `selected` = highest confidence; image is cropped around selected bbox
-- `advantage` mode: exactly 2 detections required, `selected` = higher face value; full image
-- `disadvantage` mode: same, `selected` = lower face value; full image
+- All modes retry up to `MAX_RETRIES` times if the required number of dice aren't detected
+- `normal` mode: needs ≥1 detection; `selected` = highest confidence; image cropped around bbox. Returns empty detections (no error) if nothing found after all retries
+- `advantage` mode: needs ≥2 detections; `selected` = higher face value; full image
+- `disadvantage` mode: needs ≥2 detections; `selected` = lower face value; full image
 - If `advantage`/`disadvantage` fails to find 2 dice after `MAX_RETRIES` attempts → `http_status: 422`, `result.error: "could_not_detect_two_dice"`
 
 #### `POST /api/roll/<roll_id>/report`

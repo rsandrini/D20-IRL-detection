@@ -175,27 +175,27 @@ def _do_roll(user_id, mode, debug):
     time_elapsed_detection = 0
     detections = []
 
-    if mode in ("advantage", "disadvantage"):
-        got_two = False
-        for _ in range(max_retries):
-            roll_dice(request_uuid, RESULT_FOLDER, debug)
-            if detector.interpreter is not None:
-                det_start = _time.time()
-                detections = detector.detect_objects(RESULT_FOLDER, f"{request_uuid}.jpg")
-                time_elapsed_detection += round(_time.time() - det_start, 4)
-                if len(detections) >= 2:
-                    got_two = True
-                    break
-        if not got_two and detector.interpreter is not None:
+    need = 2 if mode in ("advantage", "disadvantage") else 1
+    got_enough = False
+
+    for _ in range(max_retries):
+        roll_dice(request_uuid, RESULT_FOLDER, debug)
+        if detector.interpreter is None:
+            got_enough = True   # no model — don't retry, just proceed
+            break
+        det_start = _time.time()
+        detections = detector.detect_objects(RESULT_FOLDER, f"{request_uuid}.jpg")
+        time_elapsed_detection += round(_time.time() - det_start, 4)
+        if len(detections) >= need:
+            got_enough = True
+            break
+
+    if not got_enough and detector.interpreter is not None:
+        if mode in ("advantage", "disadvantage"):
             time_elapsed = round(_time.time() - start_time, 2)
             return {"error": "could_not_detect_two_dice", "detections": detections,
                     "time_elapsed": time_elapsed}, 422
-    else:
-        roll_dice(request_uuid, RESULT_FOLDER, debug)
-        if detector.interpreter is not None:
-            det_start = _time.time()
-            detections = detector.detect_objects(RESULT_FOLDER, f"{request_uuid}.jpg")
-            time_elapsed_detection = round(_time.time() - det_start, 2)
+        # normal mode: no dice after all retries — return empty result, don't hard-fail
 
     # Select winner
     if mode == "advantage":
