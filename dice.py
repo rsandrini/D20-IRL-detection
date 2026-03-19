@@ -156,6 +156,15 @@ def roll_dice(uuid, folder, debug):
 
     hardware_activation()
 
+    # Minimum frames to capture before checking for stop.
+    # At ~30fps: 30 frames ≈ 1s. Prevents exit before dice have started moving.
+    MIN_ROLLING_FRAMES = 30
+    # Consecutive still frames required to declare the dice settled.
+    # At ~30fps: 20 frames ≈ 0.67s of stillness.
+    STILL_FRAMES_REQUIRED = 20
+
+    total_frames = 0
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -182,9 +191,10 @@ def roll_dice(uuid, folder, debug):
             gif_frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
             gif_frame = cv2.cvtColor(gif_frame, cv2.COLOR_BGR2RGB)
             frames.append(gif_frame)
+            total_frames += 1
 
-            if frames_since_last_motion >= 10:
-                print(f"Motion stopped with {len(frames)} frames detected.")
+            if total_frames >= MIN_ROLLING_FRAMES and frames_since_last_motion >= STILL_FRAMES_REQUIRED:
+                print(f"Motion stopped after {total_frames} frames ({frames_since_last_motion} still).")
                 break
 
         last_frame_gray = gray  # small (480x270) for fast comparison
