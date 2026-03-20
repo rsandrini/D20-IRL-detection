@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detection Comparison</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #eee; min-height: 100vh; }
+
+        header {
+            background: #2a2a2a;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid #333;
+        }
+        header h1 { font-size: 16px; font-weight: bold; color: #eee; }
+        header a { color: #4af; font-size: 13px; text-decoration: none; margin-left: auto; }
+        header a:hover { text-decoration: underline; }
+
+        .layout { display: flex; height: calc(100vh - 49px); }
+
+        /* Sidebar */
+        #sidebar {
+            width: 300px;
+            min-width: 260px;
+            background: #242424;
+            border-right: 1px solid #333;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow-y: auto;
+        }
+
+        h2 { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .source-tabs { display: flex; gap: 6px; }
+        .tab-btn {
+            flex: 1;
+            padding: 7px;
+            background: #333;
+            border: none;
+            border-radius: 5px;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .tab-btn.active { background: #4af; color: #000; font-weight: bold; }
+
+        #upload-area {
+            border: 2px dashed #444;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        #upload-area.drag-over { border-color: #4af; color: #4af; }
+        #upload-area input { display: none; }
+
+        #image-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .img-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #aaa;
+            background: #2e2e2e;
+            transition: background 0.15s;
+        }
+        .img-item:hover { background: #383838; }
+        .img-item.selected { background: #1a3a55; color: #4af; }
+        .img-item img { width: 40px; height: 30px; object-fit: cover; border-radius: 3px; }
+
+        .detector-list { display: flex; flex-direction: column; gap: 6px; }
+        .detector-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px;
+            background: #2e2e2e;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .detector-item:hover { background: #383838; }
+        .detector-item input[type=checkbox] { margin-top: 2px; accent-color: #4af; flex-shrink: 0; }
+        .detector-item .det-name { font-size: 13px; font-weight: bold; }
+        .detector-item .det-desc { font-size: 11px; color: #777; margin-top: 2px; }
+
+        .btn {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+        }
+        .btn-run { background: #4c4; color: #000; }
+        .btn-run:disabled { background: #444; color: #666; cursor: default; }
+
+        #status { font-size: 12px; text-align: center; color: #888; min-height: 18px; }
+
+        /* Results area */
+        #results-area {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #1a1a1a;
+        }
+
+        #results-area h2 { font-size: 13px; color: #666; margin-bottom: 14px; }
+
+        #results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .result-card {
+            background: #242424;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        .result-card .card-header {
+            padding: 10px 12px;
+            background: #2e2e2e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-card .card-name { font-size: 13px; font-weight: bold; }
+        .result-card .card-time { font-size: 11px; color: #888; }
+        .result-card .card-desc { font-size: 11px; color: #666; padding: 4px 12px 8px; }
+        .result-card img { width: 100%; display: block; }
+        .result-card .card-detections {
+            padding: 8px 12px 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .det-badge {
+            background: #1a3a20;
+            color: #4c4;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .det-badge span { color: #888; font-weight: normal; margin-left: 4px; }
+        .no-detections { font-size: 12px; color: #666; padding: 2px 0; }
+        .error-msg { font-size: 12px; color: #c44; padding: 2px 0; }
+
+        #empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #444;
+            font-size: 14px;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Detection Comparison</h1>
+    <a href="/">← Back</a>
+</header>
+
+<div class="layout">
+    <div id="sidebar">
+        <div>
+            <h2>Image source</h2>
+            <div class="source-tabs" style="margin-top:8px">
+                <button class="tab-btn active" id="tab-upload" onclick="switchTab('upload')">Upload</button>
+                <button class="tab-btn" id="tab-existing" onclick="switchTab('existing')">Existing</button>
+            </div>
+        </div>
+
+        <div id="panel-upload">
+            <div id="upload-area" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" accept="image/*" onchange="onFileSelected(event)">
+                <div id="upload-label">Click or drag an image here</div>
+            </div>
+        </div>
+
+        <div id="panel-existing" style="display:none">
+            <div id="image-picker">
+                <div style="font-size:12px;color:#555">Loading...</div>
+            </div>
+        </div>
+
+        <div>
+            <h2>Detectors</h2>
+            <div class="detector-list" id="detector-list" style="margin-top:8px">
+                <div style="font-size:12px;color:#555">Loading...</div>
+            </div>
+        </div>
+
+        <button class="btn btn-run" id="run-btn" onclick="runCompare()" disabled>Run comparison</button>
+        <div id="status"></div>
+    </div>
+
+    <div id="results-area">
+        <div id="empty-state">
+            <div style="font-size:32px">🎲</div>
+            <div>Select an image and run comparison</div>
+        </div>
+        <div id="results-grid" style="display:none"></div>
+    </div>
+</div>
+
+<script>
+let selectedFile = null;
+let selectedPath = null;
+let detectorMeta = [];
+
+// ── Drag-and-drop ──────────────────────────────────────────────
+const uploadArea = document.getElementById('upload-area');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) applyFile(f);
+});
+
+function onFileSelected(e) { applyFile(e.target.files[0]); }
+
+function applyFile(f) {
+    selectedFile = f;
+    selectedPath = null;
+    document.getElementById('upload-label').textContent = f.name;
+    updateRunBtn();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────
+function switchTab(tab) {
+    document.getElementById('tab-upload').classList.toggle('active', tab === 'upload');
+    document.getElementById('tab-existing').classList.toggle('active', tab === 'existing');
+    document.getElementById('panel-upload').style.display = tab === 'upload' ? '' : 'none';
+    document.getElementById('panel-existing').style.display = tab === 'existing' ? '' : 'none';
+    if (tab === 'existing') loadExistingImages();
+}
+
+async function loadExistingImages() {
+    const picker = document.getElementById('image-picker');
+    picker.innerHTML = '<div style="font-size:12px;color:#555">Loading...</div>';
+    const res = await fetch('/api/compare/images');
+    const paths = await res.json();
+    if (!paths.length) {
+        picker.innerHTML = '<div style="font-size:12px;color:#555">No images in results/</div>';
+        return;
+    }
+    picker.innerHTML = '';
+    paths.forEach(p => {
+        const el = document.createElement('div');
+        el.className = 'img-item';
+        const name = p.split('/').pop();
+        el.innerHTML = `<img src="/${p}" onerror="this.style.display='none'"><span>${name}</span>`;
+        el.onclick = () => {
+            document.querySelectorAll('.img-item').forEach(x => x.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedPath = p;
+            selectedFile = null;
+            updateRunBtn();
+        };
+        picker.appendChild(el);
+    });
+}
+
+// ── Detectors ─────────────────────────────────────────────────
+async function loadDetectors() {
+    const res = await fetch('/api/compare/detectors');
+    detectorMeta = await res.json();
+    const list = document.getElementById('detector-list');
+    list.innerHTML = '';
+    detectorMeta.forEach(d => {
+        const el = document.createElement('label');
+        el.className = 'detector-item';
+        el.innerHTML = `
+            <input type="checkbox" value="${d.id}" checked>
+            <div>
+                <div class="det-name">${d.name}</div>
+                <div class="det-desc">${d.description}</div>
+            </div>`;
+        list.appendChild(el);
+    });
+}
+
+function selectedDetectors() {
+    return [...document.querySelectorAll('#detector-list input:checked')].map(i => i.value);
+}
+
+function updateRunBtn() {
+    document.getElementById('run-btn').disabled = !(selectedFile || selectedPath);
+}
+
+// ── Run ───────────────────────────────────────────────────────
+async function runCompare() {
+    const btn = document.getElementById('run-btn');
+    const status = document.getElementById('status');
+    btn.disabled = true;
+    status.textContent = 'Running...';
+
+    const form = new FormData();
+    if (selectedFile) {
+        form.append('image', selectedFile);
+    } else {
+        form.append('image_path', selectedPath);
+    }
+    selectedDetectors().forEach(d => form.append('detectors', d));
+
+    try {
+        const res = await fetch('/api/compare', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        renderResults(data.results);
+        status.textContent = `Done — ${data.results.length} detector(s) ran.`;
+    } catch(e) {
+        status.textContent = `Error: ${e.message}`;
+    } finally {
+        btn.disabled = false;
+        updateRunBtn();
+    }
+}
+
+function renderResults(results) {
+    document.getElementById('empty-state').style.display = 'none';
+    const grid = document.getElementById('results-grid');
+    grid.style.display = 'grid';
+    grid.innerHTML = '';
+
+    results.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+
+        const detHTML = r.error
+            ? `<div class="error-msg">${r.error}</div>`
+            : r.detections.length
+                ? r.detections.map(d =>
+                    `<div class="det-badge">Face ${d.face}<span>${(d.confidence*100).toFixed(1)}%</span></div>`
+                  ).join('')
+                : '<div class="no-detections">No detections</div>';
+
+        card.innerHTML = `
+            <div class="card-header">
+                <span class="card-name">${r.name}</span>
+                <span class="card-time">${r.time_ms} ms</span>
+            </div>
+            <div class="card-desc">${r.description}</div>
+            <img src="/${r.annotated_image}" alt="${r.name}">
+            <div class="card-detections">${detHTML}</div>`;
+        grid.appendChild(card);
+    });
+}
+
+// ── Init ──────────────────────────────────────────────────────
+loadDetectors();
+</script>
+</body>
+</html>

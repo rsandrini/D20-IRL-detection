@@ -15,6 +15,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for, s
 from object_detection import ObjectDetector
 from dice import *
 import db
+import detectors as detector_registry
 
 TO_LABEL_DIR = "to_label"
 TRAINING_DIR = "dice_training"
@@ -707,6 +708,103 @@ def calibrate_save():
     dice.CAMERA_ROI = dice._parse_roi()
 
     return jsonify({'status': 'ok', 'roi': roi})
+
+
+# ---------------------------------------------------------------------------
+# /compare — detection method comparison tool (no hardware required)
+# ---------------------------------------------------------------------------
+
+def _annotate(image: np.ndarray, detections: list) -> np.ndarray:
+    """Draw bounding boxes on a copy of the image."""
+    out = image.copy()
+    for d in detections:
+        x1, y1, x2, y2 = d["bbox"]
+        label = f"{d['face']} ({d['confidence']:.2f})"
+        cv2.rectangle(out, (x1, y1), (x2, y2), (10, 255, 0), 2)
+        lsz, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+        ly = max(y1, lsz[1] + 10)
+        cv2.rectangle(out, (x1, ly - lsz[1] - 10), (x1 + lsz[0], ly + 5), (255, 255, 255), cv2.FILLED)
+        cv2.putText(out, label, (x1, ly), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+    return out
+
+
+@app.route('/compare')
+def compare_page():
+    return render_template('compare.html')
+
+
+@app.route('/api/compare/detectors')
+def compare_list_detectors():
+    return jsonify(detector_registry.list_detectors())
+
+
+@app.route('/api/compare/images')
+def compare_list_images():
+    pattern = os.path.join(RESULT_FOLDER, "*.jpg")
+    files = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
+    # Exclude _crop files to keep the list clean
+    paths = [f.replace("\\", "/") for f in files if "_crop" not in f]
+    return jsonify(paths[:50])
+
+
+@app.route('/api/compare', methods=['POST'])
+def compare_run():
+    # Resolve image: uploaded file or existing path
+    image = None
+    if 'image' in request.files:
+        file = request.files['image']
+        buf = np.frombuffer(file.read(), np.uint8)
+        image = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+    elif request.is_json:
+        data = request.get_json(silent=True) or {}
+        img_path = data.get("image_path", "")
+        if img_path:
+            image = cv2.imread(img_path)
+    else:
+        img_path = request.form.get("image_path", "")
+        if img_path:
+            image = cv2.imread(img_path)
+
+    if image is None:
+        return jsonify({"error": "provide 'image' file upload or 'image_path'"}), 400
+
+    # Which detectors to run (default: all)
+    requested = request.form.getlist("detectors") or (
+        (request.get_json(silent=True) or {}).get("detectors") or []
+    )
+    all_detectors = detector_registry.get_all_detectors()
+    run = {k: v for k, v in all_detectors.items() if not requested or k in requested}
+
+    compare_id = str(uuid.uuid4())
+    results = []
+
+    for det_id, det in run.items():
+        t0 = _time.time()
+        try:
+            detections = det.detect(image)
+        except Exception as e:
+            detections = []
+            error = str(e)
+        else:
+            error = None
+        elapsed_ms = round((_time.time() - t0) * 1000, 1)
+
+        annotated = _annotate(image, detections)
+        out_filename = f"compare_{compare_id}_{det_id}.jpg"
+        out_path = os.path.join(RESULT_FOLDER, out_filename)
+        cv2.imwrite(out_path, annotated)
+
+        results.append({
+            "detector": det_id,
+            "name": det.name,
+            "description": det.description,
+            "detections": detections,
+            "annotated_image": out_path.replace("\\", "/"),
+            "time_ms": elapsed_ms,
+            **({"error": error} if error else {}),
+        })
+
+    return jsonify({"compare_id": compare_id, "results": results})
 
 
 if __name__ == '__main__':

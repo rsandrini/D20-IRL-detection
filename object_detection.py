@@ -38,6 +38,51 @@ class ObjectDetector:
             return input_data.astype(np.uint8)
         return (input_data.astype(np.float32) / 255.0)
 
+    def detect_array(self, image: np.ndarray) -> list:
+        """Run inference on a BGR numpy array. Returns same format as detect_objects."""
+        if self.interpreter is None:
+            return []
+        imH, imW = image.shape[:2]
+
+        self.interpreter.set_tensor(self.input_details[0]["index"], self._preprocess(image))
+        self.interpreter.invoke()
+
+        output = np.squeeze(self.interpreter.get_tensor(self.output_details[0]["index"])).T
+        boxes_raw = output[:, :4]
+        class_scores = output[:, 4:]
+
+        class_ids = np.argmax(class_scores, axis=1)
+        confidences = class_scores[np.arange(len(class_scores)), class_ids]
+
+        mask = confidences >= self.min_conf_threshold
+        if not mask.any():
+            return []
+
+        boxes_raw = boxes_raw[mask]
+        confidences = confidences[mask]
+        class_ids = class_ids[mask]
+
+        xmin = np.clip((boxes_raw[:, 0] - boxes_raw[:, 2] / 2) * imW, 0, imW).astype(int)
+        ymin = np.clip((boxes_raw[:, 1] - boxes_raw[:, 3] / 2) * imH, 0, imH).astype(int)
+        bw = (boxes_raw[:, 2] * imW).astype(int)
+        bh = (boxes_raw[:, 3] * imH).astype(int)
+
+        nms_boxes = [[int(x), int(y), int(w), int(h)] for x, y, w, h in zip(xmin, ymin, bw, bh)]
+        indices = cv2.dnn.NMSBoxes(nms_boxes, confidences.tolist(), self.min_conf_threshold, self.nms_threshold)
+        if len(indices) == 0:
+            return []
+
+        detections = []
+        for i in indices.flatten()[:2]:
+            label = self.labels[class_ids[i]]
+            x, y, w, h = nms_boxes[i]
+            detections.append({
+                "face": int(label),
+                "confidence": round(float(confidences[i]), 4),
+                "bbox": [int(x), int(y), int(x + w), int(y + h)],
+            })
+        return detections
+
     def detect_objects(self, image_path, image_name):
         """Run inference and return list of dicts: {face, confidence, bbox [x1,y1,x2,y2]}."""
         if self.interpreter is None:
