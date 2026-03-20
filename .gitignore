@@ -38,3 +38,9 @@ database.ini
 
 # Windows Zone.Identifier metadata files
 *:Zone.Identifier
+
+# training artifacts
+runs/
+datasets/
+*.pt
+*.npy
